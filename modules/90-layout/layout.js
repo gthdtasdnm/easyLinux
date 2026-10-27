@@ -2,14 +2,6 @@
 // Basis: Layout des Autors (Plasma-Standardleiste + angeheftete Apps), etwas moderner.
 // Wird über org.kde.PlasmaShell.evaluateScript in der laufenden Sitzung ausgeführt.
 
-// Symbol des bisherigen Startknopfs merken (z. B. CachyOS-Logo), damit es erhalten bleibt.
-var kickoffIcon = "";
-panels().forEach(function (p) {
-    p.widgets("org.kde.plasma.kickoff").forEach(function (w) {
-        w.currentConfigGroup = ["General"];
-        kickoffIcon = kickoffIcon || w.readConfig("icon", "");
-    });
-});
 
 // Leisten auf dem Hauptbildschirm ersetzen. Leisten auf weiteren Bildschirmen bleiben, wie sie sind –
 // eine neue Leiste legt Plasma immer auf dem Hauptbildschirm an.
@@ -33,7 +25,8 @@ var kickoff = panel.addWidget("org.kde.plasma.kickoff");
 kickoff.currentConfigGroup = ["General"];
 // Ein/Aus-Knöpfe im Startmenü wie bei Windows: Energie sparen, Ruhezustand, Neu starten, Herunterfahren.
 kickoff.writeConfig("systemFavorites", ["suspend", "hibernate", "reboot", "shutdown"]);
-if (kickoffIcon) kickoff.writeConfig("icon", kickoffIcon);
+// Startknopf: schlichtes Menüsymbol (drei Balken) statt Distributions-Logo
+kickoff.writeConfig("icon", "menu_new-symbolic");
 
 panel.addWidget("org.kde.plasma.pager");
 
