@@ -9,8 +9,11 @@ import time
 
 from . import desktop
 
-UID = os.getuid()
-USER_ROOT = f"/sys/fs/cgroup/user.slice/user-{UID}.slice/user@{UID}.service"
+
+
+def user_root(uid):
+    return f"/sys/fs/cgroup/user.slice/user-{uid}.slice/user@{uid}.service"
+
 # Gehört zur Oberfläche selbst – nicht als App anzeigen und niemals beenden.
 SYSTEM_IDS = {"plasmashell", "kwin_wayland", "ksmserver", "kded6", "org.kde.plasmashell",
               "org.kde.kwin", "xdg-desktop-portal", "easylinux-taskmanager", "easylinux-sessionmenu"}
@@ -84,13 +87,14 @@ class App:
 class Monitor:
     """Liefert bei jedem update() die laufenden Apps mit aktueller CPU-/RAM-Nutzung."""
 
-    def __init__(self):
+    def __init__(self, uid=None):
+        self.root = user_root(os.getuid() if uid is None else uid)
         self._last = {}       # Pfad → (Zeit, usage_usec)
         self._ncpu = os.cpu_count() or 1
 
     def _units(self):
         for slice_ in ("app.slice", "background.slice"):
-            base = os.path.join(USER_ROOT, slice_)
+            base = os.path.join(self.root, slice_)
             try:
                 names = os.listdir(base)
             except OSError:

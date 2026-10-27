@@ -158,6 +158,9 @@ restore_system() {
             else root rm -f "$f"; fi
         done < "$EASYLINUX_SYS/files.txt"
     fi
+    if [ -f "$EASYLINUX_SYS/masked.txt" ]; then
+        while IFS= read -r f; do root systemctl unmask "$f" >/dev/null 2>&1 || true; done < "$EASYLINUX_SYS/masked.txt"
+    fi
     root rm -rf "$EASYLINUX_OPT"
     root systemctl daemon-reload
     if [ -s "$EASYLINUX_SYS/packages.txt" ]; then

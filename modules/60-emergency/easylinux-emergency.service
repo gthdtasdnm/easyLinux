@@ -1,0 +1,16 @@
+[Unit]
+Description=easyLinux Notfall-Dienst (Strg+Alt+Entf, wenn die Oberfläche hängt)
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/easylinux/apps/emergency/daemon.py
+Restart=always
+RestartSec=1
+# Muss auch bei voller Auslastung sofort reagieren
+Nice=-15
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=10
+OOMScoreAdjust=-900
+MemoryMin=32M
+
+[Install]
+WantedBy=multi-user.target
