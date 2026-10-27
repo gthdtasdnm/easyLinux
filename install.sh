@@ -17,3 +17,4 @@ done
 
 date -Iseconds > "$EASYLINUX_STATE/installed"
 ok "Fertig. Rückgängig machen mit ./uninstall.sh"
+info "Bitte einmal ab- und wieder anmelden, damit Strg+Alt+Entf und Strg+Umschalt+Esc aktiv werden."

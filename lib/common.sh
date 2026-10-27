@@ -146,6 +146,15 @@ user_unit_enable() {
     echo "$1" >> "$EASYLINUX_STATE/user-units.txt"
 }
 
+# Leere Ordner entfernen, die easyLinux angelegt hat – aber nie solche, die einem Paket gehören.
+remove_empty_dirs() {
+    local d="$1"
+    while [ "$d" != / ] && [ -d "$d" ] && [ -z "$(ls -A "$d")" ] && ! pacman -Qqo "$d" >/dev/null 2>&1; do
+        root rmdir "$d" || break
+        d="$(dirname "$d")"
+    done
+}
+
 restore_system() {
     [ -d "$EASYLINUX_SYS" ] || return 0
     local f
@@ -155,14 +164,17 @@ restore_system() {
     if [ -f "$EASYLINUX_SYS/files.txt" ]; then
         while IFS= read -r f; do
             if [ -e "$EASYLINUX_SYS/backup$f" ]; then root cp -a "$EASYLINUX_SYS/backup$f" "$f"
-            else root rm -f "$f"; fi
+            else root rm -f "$f"; remove_empty_dirs "$(dirname "$f")"; fi
         done < "$EASYLINUX_SYS/files.txt"
     fi
     if [ -f "$EASYLINUX_SYS/masked.txt" ]; then
         while IFS= read -r f; do root systemctl unmask "$f" >/dev/null 2>&1 || true; done < "$EASYLINUX_SYS/masked.txt"
     fi
     root rm -rf "$EASYLINUX_OPT"
-    [ -d /usr/local/share/mime ] && root update-mime-database /usr/local/share/mime >/dev/null 2>&1 || true
+    if [ -d /usr/local/share/mime ]; then
+        if [ -z "$(ls -A /usr/local/share/mime/packages 2>/dev/null)" ]; then root rm -rf /usr/local/share/mime
+        else root update-mime-database /usr/local/share/mime >/dev/null 2>&1 || true; fi
+    fi
     root systemctl daemon-reload
     if [ -s "$EASYLINUX_SYS/packages.txt" ]; then
         # shellcheck disable=SC2046
@@ -175,5 +187,9 @@ restore_system() {
 restore_user_units() {
     [ -f "$EASYLINUX_STATE/user-units.txt" ] || return 0
     local u
-    while IFS= read -r u; do systemctl --user disable --now "$u" 2>/dev/null || true; done < "$EASYLINUX_STATE/user-units.txt"
+    while IFS= read -r u; do
+        systemctl --user disable --now "$u" 2>/dev/null || true
+        rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/systemd/timers/stamp-$u"
+    done < "$EASYLINUX_STATE/user-units.txt"
+    rmdir -p --ignore-fail-on-non-empty "$EASYLINUX_CONFIG/systemd/user" "${XDG_DATA_HOME:-$HOME/.local/share}/systemd/timers" 2>/dev/null || true
 }
