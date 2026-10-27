@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Programm installieren
+Comment=Heruntergeladene Programme per Doppelklick installieren
+Exec=/usr/bin/python3 /opt/easylinux/apps/openfile/open.py %f
+Icon=system-software-install
+NoDisplay=true
+MimeType=application/vnd.appimage;application/x-iso9660-appimage;application/x-appimage;application/vnd.flatpak.ref;application/x-alpm-package;application/vnd.debian.binary-package;application/x-deb;application/x-rpm;

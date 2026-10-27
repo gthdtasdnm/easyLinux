@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-alpm-package">
+    <comment>Arch Linux package</comment>
+    <comment xml:lang="de">Programmpaket für Arch/CachyOS</comment>
+    <sub-class-of type="application/zstd"/>
+    <glob pattern="*.pkg.tar.zst" weight="80"/>
+    <glob pattern="*.pkg.tar.xz" weight="80"/>
+  </mime-type>
+</mime-info>

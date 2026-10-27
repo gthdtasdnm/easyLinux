@@ -162,6 +162,7 @@ restore_system() {
         while IFS= read -r f; do root systemctl unmask "$f" >/dev/null 2>&1 || true; done < "$EASYLINUX_SYS/masked.txt"
     fi
     root rm -rf "$EASYLINUX_OPT"
+    [ -d /usr/local/share/mime ] && root update-mime-database /usr/local/share/mime >/dev/null 2>&1 || true
     root systemctl daemon-reload
     if [ -s "$EASYLINUX_SYS/packages.txt" ]; then
         # shellcheck disable=SC2046
