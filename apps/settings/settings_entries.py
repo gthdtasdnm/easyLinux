@@ -45,6 +45,8 @@ ENTRIES = [
      "app:org.kde.partitionmanager", "formatieren partition festplatte usb stick löschen"),
     ("system", "Multitasking", "Virtuelle Desktops, Fenster nebeneinander", "preferences-system-windows",
      "kcm_kwin_virtualdesktops", "fenster andocken snap desktops arbeitsflächen mehrere virtuell"),
+    ("system", "Snap Assist", "Fenster nebeneinander andocken, Vorschläge für die freie Fläche", "view-split-left-right",
+     "page:snapassist", "snap assist andocken nebeneinander fenster hälfte viertel ecke teilen splitscreen geteilter bildschirm"),
     ("system", "Bildschirmecken & -ränder", "Was passiert, wenn die Maus in eine Ecke fährt", "preferences-desktop-screen-edges",
      "kcm_kwinscreenedges", "ecke rand maus aktive ecken andocken snap"),
     ("system", "Taskmanager", "Laufende Apps anzeigen und beenden", "utilities-system-monitor",

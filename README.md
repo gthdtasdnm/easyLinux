@@ -1,188 +1,186 @@
 # easyLinux
 
-Ziel: Den Einstieg in Linux – zuerst **CachyOS mit KDE Plasma 6 (Wayland)** – so einfach machen wie möglich.
-Modernes, einheitliches Design, verständliche Namen, Struktur und Bedienung angelehnt an Windows
-(kein 1:1-Klon von Windows 10 oder 11, sondern etwas Eigenes dazwischen, moderner).
+**Linux, das sich anfühlt wie zu Hause.** easyLinux macht [CachyOS](https://cachyos.org) mit KDE Plasma
+für Umsteiger von Windows einfach: vertraute Bedienung, verständliche Namen, Werkzeuge für den Notfall –
+und alles lässt sich mit einem Klick wieder entfernen.
 
-Alles soll als Repo veröffentlicht werden, das andere herunterladen und bei sich installieren können
-(erst `install.sh` + `uninstall.sh` mit Sicherung der alten Einstellungen, später Arch-Pakete / AUR).
+> **Alpha-Version.** easyLinux ist benutzbar und wird täglich verwendet, aber noch jung. Es kann Fehler geben.
+> Bitte lies vor der Installation den Abschnitt [Bevor du installierst](#bevor-du-installierst).
 
-> Status: **Erste vollständige Version, in einer frischen CachyOS-VM getestet.** Alle 10 Punkte unten sind umgesetzt (Medienplayer und Snap Assist in einfacher Form bzw. noch offen) – Details je Punkt unter „Stand“.
+**[⬇ easyLinux-Installer herunterladen](https://github.com/gthdtasdnm/easyLinux/releases/latest)**
 
-## Installieren / Entfernen
+---
+
+## Für Einsteiger
+
+### Was ist easyLinux?
+
+Du hast gerade von Windows zu Linux gewechselt – oder überlegst es dir? Dann kennst du das: Vieles ist
+ähnlich, aber eben nicht gleich. Die Programme heißen anders, der Taskmanager fehlt, Strg+Alt+Entf meldet
+dich ab, und wenn etwas hängt, weiß man nicht weiter.
+
+easyLinux ist **kein eigenes Betriebssystem**. Es ist eine Ergänzung für CachyOS, die die Oberfläche so
+einrichtet, wie man es von Windows kennt, und die fehlenden Werkzeuge mitbringt. Dein Linux bleibt dabei
+ein ganz normales CachyOS.
+
+### Was bekomme ich?
+
+| Von Windows kennst du … | easyLinux bringt … |
+|---|---|
+| Taskleiste und Startknopf | Taskleiste unten mit Startmenü und angehefteten Apps. Rechtsklick auf den Startknopf öffnet das bekannte Schnellmenü (Terminal, Taskmanager, Einstellungen, Herunterfahren …) |
+| Task-Manager (**Strg+Umschalt+Esc**) | Taskmanager mit den gleichen Tabs: Prozesse, Leistung, Autostart, Details, Dienste. Zeigt Apps statt kryptischer Prozessnamen und öffnet sofort, auch wenn der Computer ausgelastet ist |
+| **Strg+Alt+Entf** | Der bekannte Bildschirm: Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren. Hängt die Oberfläche komplett, öffnet ein zweites Strg+Alt+Entf eine Notfall-Hilfe, mit der du hängende Apps beenden oder die Oberfläche neu starten kannst – ohne den Stecker zu ziehen |
+| Einstellungen | Einstellungen im Windows-11-Aufbau in einem einzigen Fenster, mit einer Suche, die versteht, was du meinst („Bildschirm“ findet auch Auflösung, Skalierung und Nachtlicht) |
+| Windows Update | Update-Manager: ein Klick, Fortschrittsbalken, Restzeit. Sicherheitsupdates werden hervorgehoben, Probleme mit Paketservern löst er selbst |
+| Windows-Sicherheit | Sicherheit-App mit Ampel für Virenschutz, Firewall, Updates und Sicherungspunkte. Den Virenschutz richtest du auf Wunsch mit einem Klick ein |
+| Apps & Features | „Installierte Apps“ – mit einem Klick deinstallieren |
+| Doppelklick auf eine Setup-Datei | Doppelklick auf heruntergeladene Programme (.AppImage, Flatpak, Pakete) installiert sie. Bei Windows-ähnlichen Linux-Formaten (.deb/.rpm) wird erklärt, wo es die App stattdessen gibt |
+| Snap Assist | Fenster an den Rand ziehen (oder **Meta + Pfeiltaste**) → die anderen Fenster erscheinen zur Auswahl für die freie Fläche. Funktioniert auch mit Bildschirmvierteln und bietet Fenster von allen Bildschirmen an, einstellbar unter *Einstellungen › System › Snap Assist* |
+| Verständliche App-Namen | „Dateien“, „Terminal“, „Editor“, „Medienplayer“, „Rechner“ statt Dolphin, Konsole, Kate … |
+| Benachrichtigungen | Verschwinden nach einigen Sekunden und bleiben im Verlauf |
+| Schutz vor Einfrieren | Wenn der Arbeitsspeicher voll läuft, wird die verantwortliche App beendet, bevor der ganze Computer einfriert – mit Meldung, welche es war |
+
+### Was brauche ich?
+
+- **CachyOS mit KDE Plasma** (die Standard-Desktop-Variante). Andere Linux-Systeme werden nicht unterstützt.
+- Ein Benutzerkonto mit Administratorrechten (das ist das Konto, das du bei der Installation von CachyOS angelegt hast).
+- Internetverbindung.
+
+### Installieren
+
+1. **[easyLinux-Installer herunterladen](https://github.com/gthdtasdnm/easyLinux/releases/latest)** (Datei `easyLinux-Installer`).
+2. Im Ordner *Downloads* doppelt darauf klicken und **Ausführen** wählen.
+3. **Jetzt installieren** klicken und einmal dein Passwort eingeben.
+4. Einmal **ab- und wieder anmelden** – fertig.
+
+Updates für easyLinux kommen danach automatisch über den Update-Manager, zusammen mit allen anderen Updates.
+
+### Wieder entfernen
+
+Installer erneut öffnen (oder *Einstellungen › System › easyLinux*) → **easyLinux entfernen**. Danach einmal
+ab- und anmelden. Deine Taskleiste und die geänderten Einstellungen werden auf den Stand von vor der
+Installation zurückgesetzt. Apps, die du in der Zwischenzeit installiert hast, bleiben erhalten.
+
+### Bevor du installierst
+
+easyLinux ist eine **Alpha-Version**. Damit du weißt, worauf du dich einlässt:
+
+**Kann easyLinux meinen Computer kaputt machen?**
+Sehr unwahrscheinlich. easyLinux verändert **nichts** am Startvorgang, am Linux-Kern, an Treibern, Festplatten
+oder Partitionen und löscht keine eigenen Dateien. Es richtet hauptsächlich die Oberfläche ein und bringt
+eigene Programme mit. Das Schlimmste, was realistisch passieren kann: Die Oberfläche verhält sich nach einem
+Fehler seltsam (z. B. fehlt die Taskleiste). Das lässt sich immer beheben – siehe [Wenn etwas schiefgeht](#wenn-etwas-schiefgeht).
+
+**Das solltest du wissen:**
+
+- ⚠️ **Deine Taskleiste wird ersetzt.** Hast du Taskleiste oder Startmenü schon selbst angepasst, ist das nach
+  der Installation durch die easyLinux-Leiste ersetzt. Beim Entfernen kommt dein alter Stand zurück –
+  Änderungen, die du *zwischendurch* an der Leiste gemacht hast, gehen dabei aber verloren.
+- ⚠️ **Der Speicher-Wächter beendet Apps.** Ist der Arbeitsspeicher länger als etwa 10 Sekunden überlastet,
+  wird die App beendet, die ihn am stärksten beansprucht. Das schützt vor einem eingefrorenen Computer, kann aber auch
+  große Spiele, virtuelle Maschinen oder Bildbearbeitung mit sehr großen Dateien treffen. Ungespeicherte
+  Arbeit in dieser App ist dann verloren – also regelmäßig speichern.
+- ⚠️ **Updates ohne Passwort.** Administratoren können Updates im Update-Manager ohne Passwort installieren
+  (nur diese eine Aktion und nur, wenn man selbst am Computer sitzt). Das ist bequem, bedeutet aber auch:
+  Wer an deinem entsperrten Computer sitzt, kann Updates starten. Sperre den Bildschirm, wenn du weggehst
+  (**Meta + L** oder Strg+Alt+Entf → Sperren).
+- ⚠️ **System-Updates sind immer vollständig.** Wie bei jedem Arch-basierten System kann ein Update selten
+  Probleme machen. CachyOS legt vor jedem Update automatisch einen **Sicherungspunkt** an, zu dem du
+  zurückkehren kannst (wenn CachyOS mit dem Standard-Dateisystem Btrfs installiert wurde).
+- ⚠️ **Die Paketquelle ist (noch) nicht signiert.** easyLinux und seine Updates kommen direkt aus diesem
+  GitHub-Projekt. Du vertraust damit diesem Projekt – genau wie bei jeder anderen Software aus dem Internet.
+- ℹ️ **Strg+Alt+Entf startet nicht mehr sofort neu.** Das war unter Linux bisher die Standardeinstellung auf
+  der Textkonsole. Dafür gibt es jetzt den Windows-Bildschirm und die Notfall-Hilfe. Der dazugehörige Dienst
+  liest die Tastatur, achtet aber ausschließlich auf diese eine Tastenkombination und speichert nichts.
+
+**Tipp:** Lege vor der Installation selbst einen Sicherungspunkt an: *Einstellungen › Update › Sicherungspunkte*
+(Btrfs Assistant) → *Snapper* → *Neu*.
+
+### Wenn etwas schiefgeht
+
+1. **Eine App hängt:** Strg+Umschalt+Esc → Taskmanager → App auswählen → *Task beenden*.
+2. **Die ganze Oberfläche hängt:** Strg+Alt+Entf, und wenn nichts passiert, noch einmal Strg+Alt+Entf →
+   Notfall-Hilfe → *Oberfläche neu starten*.
+3. **Nach einem Update startet etwas nicht mehr richtig:** Computer neu starten und im Startmenü (Bootloader)
+   einen **Snapshot** von vor dem Update auswählen. Danach in *Sicherungspunkte* dauerhaft wiederherstellen.
+4. **easyLinux selbst macht Probleme und der Installer geht nicht auf:** Mit **Strg+Alt+F3** auf eine
+   Textkonsole wechseln, anmelden und eingeben:
+   ```
+   sudo pacman -R easylinux
+   ```
+   Danach neu starten. Mit **Strg+Alt+F1** (oder F2) kommst du zurück zur Oberfläche.
+
+Fehler bitte als [Issue](https://github.com/gthdtasdnm/easyLinux/issues) melden – am besten mit einer kurzen
+Beschreibung, was du gemacht hast und was passiert ist.
+
+### Was noch fehlt
+
+- Die Taskleiste erscheint nur auf dem Hauptbildschirm.
+- Einige ältere KDE-Einstellungsseiten öffnen sich noch in einem eigenen Fenster.
+- Eigener Medienplayer (bis dahin: Haruna als „Medienplayer“), Laufwerks-Seite in den Einstellungen,
+  Andock-Layouts am Maximieren-Knopf wie bei Windows 11.
+
+---
+
+## Für Fortgeschrittene
+
+### Aufbau
+
+easyLinux ist ein normales pacman-Paket (`easylinux`, arch=any) aus einer eigenen Paketquelle:
+
+```ini
+[easylinux]
+SigLevel = Optional TrustAll
+Server = https://github.com/gthdtasdnm/easyLinux/releases/download/repo
+```
+
+Der Installer (C++/QML, eine Datei) trägt die Quelle in `/etc/pacman.conf` ein, installiert das Paket per
+pkexec und richtet den Benutzer ein. Beim Entfernen nimmt er beides zurück.
+
+- **Programme** liegen unter `/opt/easylinux` – Python 3 + PySide6/QML mit Kirigami, damit sie zu Plasma passen.
+  Zwei kleine C++-Teile (Plasma-Plugin fürs Rechtsklickmenü, `kcmhost` zum Einbetten von KDE-Einstellungsseiten)
+  werden auf dem Zielrechner gegen die installierte Qt-/Plasma-Version gebaut und nach Plasma-Updates per
+  pacman-Hook neu gebaut (`easylinux-rebuild`). Schlägt das fehl, fallen die Funktionen auf Plasma-Standard zurück.
+- **Pro Benutzer** richtet `easylinux-user-setup` beim Anmelden Leiste, Tastenkürzel, Standard-Apps usw. ein
+  (`user/NN-name/apply.sh`). Jede geänderte Datei in `~/.config` wird vorher gesichert
+  (`~/.local/share/easylinux/backup/`), `revert.sh` und die Wiederherstellung nehmen alles zurück.
+
+### Was systemweit geändert wird
+
+| Änderung | Zweck |
+|---|---|
+| `[easylinux]` in `/etc/pacman.conf` | Paketquelle (unsigniert, siehe oben) |
+| `ctrl-alt-del.target` maskiert | Strg+Alt+Entf auf der Konsole startet nicht neu |
+| `easylinux-emergency.service` (root) | liest Tastaturen per evdev, prüft per Wayland-Ping, ob KWin antwortet; sonst Textmenü auf VT 9 |
+| `systemd-oomd` aktiviert + `user-.slice.d`/`oomd.conf.d` | Speicher-Wächter (Speicherdruck über 50 % für 10 s → kill) |
+| Polkit-Regeln `org.easylinux.update`, `org.easylinux.security` | Gruppe `wheel`, nur aktive lokale Sitzung, ohne Passwort |
+| `/usr/local/share/applications/*.desktop` | angepasste Kopien für einheitliche Namen (pacman-Hook hält sie aktuell) |
+| `/var/lib/flatpak/overrides/global` (nur falls nicht vorhanden) | Flatpak-Apps übernehmen Farben und Schrift |
+| Flathub-Remote | wird hinzugefügt, falls er fehlt |
+| KWin-Skript `easylinux-snapassist`, Benutzerdienste für Taskmanager und Update-Prüfung | |
+
+Alles davon wird beim Entfernen zurückgenommen (`packaging/easylinux.install`, `apps/installer/remove-root.sh`).
+Von der Sicherheit-App nachinstallierte Pakete (z. B. ClamAV) werden protokolliert und mit entfernt.
+
+### Aus dem Quellcode
 
 ```bash
-./install.sh     # richtet easyLinux ein, sichert vorher die alten Einstellungen
-./uninstall.sh   # stellt den Zustand von vor der Installation wieder her
+git clone https://github.com/gthdtasdnm/easyLinux && cd easyLinux
+./install.sh     # Paket bauen (makepkg), installieren, Benutzer einrichten
+./uninstall.sh   # alles wieder entfernen
 ```
 
-Gesichert wird nach `~/.local/share/easylinux/backup/` – immer der Stand **vor** der ersten Installation.
+Den Installer baut `apps/installer/build.sh`, veröffentlicht wird mit `tools/release/release.sh`.
 
-## Aufbau
+### Entwicklung
 
-```
-install.sh / uninstall.sh   Einstieg, ohne Rückfragen (einmal Passwort für systemweite Teile)
-lib/common.sh               Sichern/Wiederherstellen, systemweite Änderungen protokollieren
-apps/                       Programme (Python + Qt/QML mit Kirigami, passend zu KDE)
-  easylinux/                gemeinsame Bausteine (Apps über systemd-Gruppen, .desktop-Dateien)
-  taskmanager/              Taskmanager + Strg+Alt+Entf-Bildschirm (ein vorgeladener Prozess)
-  emergency/                Notfall-Dienst (root) + Textmenü auf Konsole 9
-  updater/                  Update-Manager + root-Helfer (pkexec)
-  settings/                 Einstellungen wie Windows 11 (ein Fenster)
-    kcmhost/                kleine C++-Brücke: KDE-Einstellungsseiten im selben Fenster (wird beim Installieren gebaut)
-  security/                 Sicherheit (wie Windows-Sicherheit) + root-Helfer (pkexec)
-  openfile/                 Doppelklick-Installation
-  taskbarmenu/              Rechtsklickmenü der Leiste (C++-Plugin für Plasma, wird beim Installieren gebaut)
-bin/                        Startskripte, easylinux-names, easylinux-shortcut
-data/names.conf             Tabelle der einheitlichen App-Namen
-modules/NN-name/            apply.sh (+ revert.sh) je Funktion, laufen in Nummern-Reihenfolge
-tools/vm/                   Test-VM vom Host aus steuern
-```
+Entwickelt und getestet wird in einer frischen CachyOS-VM (GNOME Boxes), die sich vom Host aus fernsteuern
+lässt – siehe [`tools/vm/README.md`](tools/vm/README.md). Eine Übersicht über den Code, Arbeitsweise und
+bekannte Stolpersteine steht in [`CLAUDE.md`](CLAUDE.md).
 
-Jede Änderung wird protokolliert (`backup_config`, `sys_put`, `pkg_need`, `unit_enable` …) – `uninstall.sh` nimmt sie
-vollständig zurück. Getestet: Installation → Neustart → Deinstallation; Pakete, Dienste und Dateien sind danach wie vorher.
+Grundsätze: Einsteiger zuerst (kein Terminal nötig), einheitliche Namen und ein Design, Notfall-Werkzeuge
+müssen *immer* funktionieren, und alles muss rückgängig zu machen sein.
 
-## Stand (27.10.2026)
+### Lizenz
 
-| # | Funktion | Stand |
-|---|---|---|
-| 1 | Startmenü & Taskleiste | ✅ schwebende Leiste, angeheftet: Einstellungen, Dateien, Browser, Taskmanager. Rechtsklick wie Windows: Startknopf → Win+X-Menü (Terminal, Terminal (Administrator) mit Passwortabfrage, Task-Manager, Einstellungen, Herunterfahren …), Taskleiste → Task-Manager, Taskleisteneinstellungen (eigenes Plasma-Plugin, nach Plasma-Updates automatisch neu gebaut). Offen: Startmenü-Favoriten (verwaltet Plasma selbst), mehrere Bildschirme |
-| 2 | Taskmanager | ✅ wie Windows 11 mit Tabs: **Prozesse** (Apps statt Prozesse über systemd-Gruppen, CPU/RAM/Datenträger je App, sortierbar, Effizienzmodus, „Task beenden“ beendet die ganze App), **Leistung** (Prozessor, Speicher, jedes Laufwerk, Netzwerk, AMD-GPU mit Verlauf), **Autostart-Apps** (Schalter, Original bleibt unverändert), **Details** (alle Prozesse, Priorität, Beenden erzwingen), **Dienste** (Starten/Beenden mit Passwort). Strg+Umschalt+Esc, vorgeladen. Offen: Netzwerk je App |
-| 3 | Strg+Alt+Entf | ✅ Windows-Bildschirm (Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren) · ✅ Speicher-Wächter (oomd greift nach 10 s ein, Plasma meldet die App) · ✅ Notfall-Dienst: fragt KWin per Wayland direkt, ob die Oberfläche noch antwortet – nur dann Textmenü auf Konsole 9; auf Sperr- und Anmeldebildschirm passiert nichts |
-| 4 | Einheitliche Namen | ✅ Dateien, Terminal, Editor, Bilder, Rechner, Bildschirmfoto, Medienplayer (Haruna) …; Entwickler-/Doppel-Apps ausgeblendet; pacman-Hook hält es nach Updates aktuell. Offen: eigener Medienplayer |
-| 5 | Design | ✅ Flatpak-Apps übernehmen Farben/Schrift; GTK nutzt bereits Breeze. Offen: Akzentfarbe vom Hintergrund, eigenes Gesamtdesign |
-| 6 | Update-Manager | ✅ ein Klick, Fortschritt + Restzeit, Admins ohne Passwort (Polkit, nur diese Aktion), Sicherheitsupdates markiert (arch-audit), Flatpak, Selbstheilung (Sperre, Schlüsselbund, 404 → Spiegel neu bewerten), „Neustart nötig“, sanfte Erinnerung. Sicherungspunkte macht CachyOS bereits (snap-pac) |
-| 7 | Einstellungen | ✅ wie Windows 11 **in einem Fenster**: Konto oben links, Suche mit Synonymen, Bereiche und Reihenfolge wie Windows, KDE-Seiten eingebettet (inkl. Unterseiten, Übernehmen/Zurücksetzen, Rückfrage bei ungespeicherten Änderungen), Pfad-Überschrift „System › Bildschirm“, „Installierte Apps“. Alte QWidget-Seiten (z. B. WLAN-Verbindungen) öffnen noch eigene Fenster. Offen: eigene Laufwerks-Seite |
-| 8 | Doppelklick-Installation | ✅ .AppImage (→ ~/Programme + Startmenü + Symbol), .flatpakref, .pkg.tar.zst, .deb/.rpm → Alternative anbieten; mit eingerichtetem Virenschutz wird vorher geprüft |
-| + | Sicherheit | ✅ wie Windows-Sicherheit: Ampel für Virenschutz, Firewall, Updates/Sicherheitslücken, Sicherungspunkte, Bildschirmsperre. Virenschutz (ClamAV) per Klick, prüft auf Knopfdruck und vor Installationen – kein Dauerscanner. Quarantäne, Löschen, Zulassen |
-| 9 | Benachrichtigungen | ✅ 6 Sekunden, Verlauf. Offen: Apps, die „dauerhaft“ erzwingen |
-| 10 | Snap Assist | ✅ KWin-Skript: Fenster an eine Bildschirmhälfte andocken (Ziehen an den Rand oder Meta+←/→) → in der freien Hälfte erscheinen die übrigen Fenster als Vorschau, ein Klick dockt das gewählte daneben an. Abbruch: Klick daneben oder anderes Fenster wählen. Nur per Maus – KWin gibt Skript-Fenstern keinen Tastaturfokus. Offen: Layout-Menü am Maximieren-Knopf (Windows 11) |
-
----
-
-## Grundprinzipien
-
-- **Einsteiger zuerst:** Kein Terminal, keine `ja/nein`-Abfragen, keine Befehle, die man googeln muss.
-- **Einheitlich:** Ein Design für alles, Apps heißen so, wie das, was sie tun („Medienplayer“, „Dateien“, „Taskmanager“).
-- **Zuverlässig:** Lieber weniger Funktionen, die immer funktionieren, besonders bei Notfall-Werkzeugen.
-- **Rückgängig machbar:** Alles, was easyLinux ändert, kann wieder entfernt werden.
-- **Von 0 testen:** Entwicklung und Tests in einer frischen CachyOS-VM (GNOME Boxes), nicht nur auf dem eigenen, bereits angepassten System.
-
----
-
-## Funktionen
-
-### 1. Startmenü & Taskleiste
-- Das aktuelle Layout des Autors ist zu ~90 % richtig → als **Ausgangspunkt** auslesen und als Layout-Skript speichern, das auf einem frischen System automatisch genau so eingerichtet wird.
-- Moderner: abgerundete / schwebende Leiste, Unschärfe, aufgeräumtes Startmenü mit angehefteten Apps.
-- Ausgelesen (Okt. 2026): Plasma-Standardleiste unten, 46 px, nicht schwebend – Startmenü, Arbeitsflächen, Taskleiste, Systemabschnitt, Uhr, „Desktop anzeigen“; Ein/Aus im Startmenü: Energie sparen, Ruhezustand, Neu starten, Herunterfahren.
-- easyLinux-Version (`modules/10-layout`): gleiche Leiste, aber **schwebend**; angeheftet: Einstellungen, Dateien, Browser, Systemmonitor (statt persönlicher Apps).
-- Offen: mehrere Bildschirme (das Skript legt aktuell nur eine Leiste auf dem Hauptbildschirm an).
-- Aufwand: 🟢 gering
-
-### 2. Taskmanager
-- *Das* Werkzeug, wenn etwas nicht funktioniert → muss **immer** zuverlässig aufgehen.
-- Hohe Priorität, sehr wenig Verbrauch, läuft im Hintergrund vorgeladen → öffnet sofort, auch unter Last.
-- Lesbar: **Apps statt Prozesse** („Firefox“ statt `firefox-bin`), großer „Task beenden“-Knopf, einfache Diagramme, verständliche Begriffe.
-- Tastenkürzel **Strg+Shift+Esc**.
-- Aufwand: 🟠 hoch (eigenes Programm)
-
-### 3. Strg+Alt+Entf – Notausgang
-Ziel: Statt Stecker ziehen bekommt man **immer eine Reaktion**.
-1. **Vorbeugen:** Speicher-Wächter beendet das Programm, das den RAM vollmacht, *bevor* das System einfriert – mit Meldung, welches Programm es war.
-2. **Normalfall:** Strg+Alt+Entf → Bildschirm wie bei Windows: Taskmanager, Sperren, Benutzer wechseln, Abmelden, Neustart, Ausschalten.
-3. **Oberfläche hängt:** Eigener kleiner Notfall-Dienst liest die Tastatur direkt (unabhängig von der Oberfläche). Bei Strg+Alt+Entf erscheint ein einfacher Notfall-Bildschirm: „Hängendes Programm beenden“, „Oberfläche neu starten“, „Neu starten“, „Ausschalten“.
-- Grenze: Friert der Linux-Kern selbst ein, hilft nichts mehr (selten).
-- Aufwand: 🟠 hoch, gründlich in der VM testen (Hänger absichtlich auslösen).
-
-### 4. Einheitliche Apps & Namen – „DER Medienplayer“
-- Alle Apps heißen, was sie tun: Medienplayer, Dateien, Bilder, Rechner, Texteditor, Taskmanager … (🟢 einfach)
-- Nur Apps, die zum KDE-/Qt-Design passen (GTK-Apps wie Celluloid wirken fremd).
-- **Eigener Medienplayer** auf Basis von mpv mit moderner Oberfläche im Gesamtdesign. (🟡–🟠)
-
-### 5. Design
-- Kein Theme-Programm, keine große Auswahl nötig – **ein einheitliches Design für alles**.
-- Optional: Akzentfarbe / Farben anpassbar (KDE kann das bereits, auch passend zum Hintergrundbild).
-- Hauptarbeit: Auch Fremd-Apps (GTK, Flatpak) sollen gleich aussehen.
-- Aufwand: 🟢–🟡
-
-### 6. Update-Manager
-- Kein Terminal, keine `ja`-Abfragen, höchstens einmal ein Passwort (für Admins evtl. gar keins).
-- **Ein Klick** → Fortschrittsbalken + geschätzte Restzeit.
-- Zwei Bereiche:
-  - **System** – wird immer komplett aktualisiert (Teil-Updates sind auf Arch/CachyOS gefährlich); wichtige Sicherheits-Updates werden hervorgehoben.
-  - **Apps** (Flatpak) – auch einzeln möglich.
-- Vor jedem Update automatischer Snapshot zum Zurückspringen.
-- Sanfte Erinnerungen (kein Zwang), damit Updates sich nicht monatelang stauen. Hinweis „Neustart nötig“ bei Kernel-Updates.
-- Bekanntes Problem (selbst erlebt): veraltete Paketliste → 404-Fehler. Der Updater muss so etwas selbst lösen.
-- Aufwand: 🟠 hoch
-
-### 7. Einstellungen
-- Eigene App mit **Windows-Struktur**: System, Bluetooth & Geräte, Netzwerk, Personalisierung, Apps, Konten, Zeit & Sprache, Update.
-- **Gute deutsche Suche** mit Synonymen: „Bildschirm“ → Auflösung, Skalierung, Helligkeit, Nachtlicht (heute kommt dort „Hintergrundbild“).
-- Tiefe Spezialeinstellungen: vorhandene KDE-Einstellungsseiten einbinden statt neu bauen.
-- Unterseiten:
-  - **Apps → Installierte Apps:** Liste mit Name, Symbol, Größe; Deinstallieren mit einem Klick (Systempakete, AUR, Flatpak, AppImage). Nur echte Apps zeigen, keine Bibliotheken; Reste/Abhängigkeiten sicher mit entfernen.
-  - **System → Speicher / Laufwerke:** Laufwerke & Partitionen verständlich anzeigen, „Beim Start automatisch einbinden“ als Schalter, USB-Stick formatieren. Gefährliche Aktionen deutlich absichern.
-- Aufwand: 🟠 hoch
-
-### 8. Programme einfach installieren
-- Wie bei Windows: **Doppelklick auf die heruntergeladene Datei → installiert**, ohne `chmod` usw.
-- `.AppImage` → automatisch ausführbar machen, ins Startmenü eintragen, deinstallierbar.
-- `.flatpakref`, `.pkg.tar.zst` → per Doppelklick installieren.
-- `.deb` / `.rpm` (nicht passend für CachyOS) → verständlich erklären und die gleiche App aus Paketquellen / Flathub anbieten.
-- Aufwand: 🟡 mittel
-
-### 9. Benachrichtigungen wie in Windows
-- Problem: Manche Benachrichtigungen bleiben unendlich lange stehen.
-- Ziel: Popups verschwinden nach einigen Sekunden immer und landen im Benachrichtigungscenter (Verlauf).
-- Aufwand: 🟢 gering (Konfiguration), evtl. 🟡 falls Apps dauerhafte Meldungen erzwingen.
-
-### 10. Fenster-Andocken mit Auswahl („Snap Assist“) – niedrige Priorität
-- Wird ein Fenster an eine Bildschirmhälfte angedockt, erscheinen die übrigen Fenster als Vorschau auf der anderen Hälfte → eins anklicken, es füllt die andere Hälfte.
-- KDE hat das nicht von Haus aus → als KWin-Skript umsetzbar (vorher prüfen, ob es schon eins gibt).
-- Aufwand: 🟡 mittel
-
----
-
-## Reihenfolge
-
-1. **Basis:** VM, Leisten-/Startmenü-Layout, einheitliche Namen, Design, Benachrichtigungen, Installer/Deinstaller
-2. **Stabilität:** Strg+Alt+Entf, Notfall-Dienst, Speicher-Wächter, Taskmanager
-3. **Update-Manager**
-4. **Einfache App-Installation** (Doppelklick)
-5. **Einstellungen** (inkl. Apps deinstallieren, Laufwerke)
-6. **Medienplayer**, Snap Assist
-
-Gesamt: mehrere Monate für alles in guter Qualität, erste sichtbare Ergebnisse nach wenigen Tagen.
-
----
-
-## Testumgebung
-
-- Host: CachyOS, KDE Plasma 6, Wayland, KVM verfügbar.
-- VM: **GNOME Boxes** (installiert). CachyOS-ISO (Desktop/KDE) von cachyos.org, VM mit 4 Kernen, 8 GB RAM, 40 GB.
-- Nach der Installation sofort Snapshot **„Frisch installiert“** anlegen → nach jedem Test zurücksetzen. ✅ (`frisch-installiert`)
-- Details zur Einrichtung und Steuerung: [`tools/vm/README.md`](tools/vm/README.md)
-
-### Erkenntnisse aus der VM-Installation (27.10.2026)
-Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später abfangen sollte:
-- **Langsames Netz in der VM:** GNOME Boxes erkennt CachyOS nicht und nimmt alte Hardware (rtl8139) → ~100 B/s. Mit virtio volle Geschwindigkeit.
-- **Installer bricht beim Schlüsselbund ab:** Ein Schlüssel im aktuellen `archlinux-keyring` hatte einen Zeitstempel in der Zukunft → „could not be locally signed“. Gelöst mit `ignore-time-conflict` während der Installation.
-- **Spiegelserver mit 404-Fehlern** (cdn77) – genau das Problem aus Punkt 6 (Update-Manager).
-- **snap-pac stürzt bei `%` in der pacman-Befehlszeile ab** (z. B. `pacman -U https://…%3A…`): „invalid interpolation syntax“ → pacman bricht mit „Konnte die Vorgangs-Hooks nicht starten“ ab. Für Einsteiger unverständlich.
-- **Installer-Firewall greift auf die Live-Umgebung über:** Der Schritt „UFW aktivieren“ blockiert danach auch eingehende Verbindungen im Live-System.
-
-## Nächste Schritte
-
-- [x] Host neu starten (Kernel-Update), CachyOS-ISO herunterladen
-- [x] VM in GNOME Boxes installieren, Snapshot „Frisch installiert“ anlegen
-- [x] Aktuelles Plasma-Layout des Autors auslesen (`~/.config/plasma-org.kde.plasma.desktop-appletsrc` u. a.) und als Basis sichern
-- [x] Git-Repo + Projektstruktur anlegen
-- [x] `install.sh` / `uninstall.sh` in der VM testen (Startmenü-Symbol der Distribution bleibt jetzt erhalten)
-- [x] Einheitliche App-Namen, Taskmanager, Strg+Alt+Entf, Notfall-Dienst, Speicher-Wächter, Update-Manager, Doppelklick-Installation, Einstellungen
-- [ ] Auf dem eigenen PC ausprobieren (vorher Btrfs-Snapshot)
-- [x] Taskmanager mit Tabs, Sicherheit, Einstellungen in einem Fenster, Strg+Alt+Entf-Fehler bei Sperre/Benutzerwechsel
-- [x] Rechtsklick wie Windows (Startknopf, Taskleiste), Snap Assist
-- [ ] Startmenü-Favoriten, mehrere Bildschirme, eigener Medienplayer, Laufwerks-Seite
-- [ ] Später: als Arch-/AUR-Paket
+Noch nicht festgelegt.

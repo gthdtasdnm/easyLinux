@@ -1,7 +1,7 @@
 {
     "KPackageStructure": "KWin/Script",
     "KPlugin": {
-        "Description": "Nach dem Andocken eines Fensters die anderen Fenster für die freie Hälfte anbieten – wie Snap Assist bei Windows",
+        "Description": "Nach dem Andocken eines Fensters die anderen Fenster für die freie Fläche anbieten – wie Snap Assist bei Windows",
         "Icon": "view-split-left-right",
         "Id": "easylinux-snapassist",
         "License": "GPL",

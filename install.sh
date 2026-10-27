@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Für Entwickler: easyLinux aus diesem Ordner als Paket bauen, installieren und einrichten.
-# Einsteiger nehmen den Installer (easyLinux-Installer.AppImage, siehe README).
+# Einsteiger nehmen den grafischen Installer (easyLinux-Installer, siehe README).
 set -euo pipefail
 repo="$(cd "$(dirname "$0")" && pwd)"
 out="$(mktemp -d)"

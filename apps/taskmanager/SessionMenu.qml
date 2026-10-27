@@ -3,20 +3,32 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import QtQuick.Window
 import org.kde.kirigami as Kirigami
+import org.kde.layershell as LayerShell
 
 // Bildschirm für Strg+Alt+Entf – wie bei Windows: Sperren, Benutzer wechseln, Abmelden,
 // Taskmanager und unten rechts Neu starten / Herunterfahren.
+// Wie bei Windows deckend und ohne Animation: als Layer-Shell-Fläche (wie der Sperrbildschirm) über allem –
+// KWin blendet solche Flächen nicht ein und aus wie normale Fenster.
 Window {
     id: menu
     title: "Sicherheitsoptionen"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     visibility: Window.Hidden
-    color: "#f20f1318"
+    // Dunkle Variante der Akzentfarbe (Einstellungen › Farben) – Windows 10 nimmt hier ebenfalls die Akzentfarbe
+    color: Qt.darker(Kirigami.Theme.highlightColor, 2.6)
+
+    LayerShell.Window.scope: "easylinux-sessionmenu"
+    LayerShell.Window.layer: LayerShell.Window.LayerOverlay
+    LayerShell.Window.anchors: LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+                             | LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorRight
+    LayerShell.Window.exclusionZone: -1
+    LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityExclusive
+    LayerShell.Window.wantsToBeOnActiveScreen: true  // Bildschirm mit der Maus bzw. dem Fokus
 
     signal actionChosen(string action)
 
     function open() {
-        menu.showFullScreen()
+        menu.show()
         menu.raise()
         menu.requestActivate()
         first.forceActiveFocus()
@@ -79,10 +91,27 @@ Window {
         MenuButton { label: "Abmelden"; onClicked: menu.choose("logout") }
         MenuButton { label: "Taskmanager"; onClicked: menu.choose("taskmanager") }
         Item { Layout.preferredHeight: Kirigami.Units.gridUnit }
-        QQC2.Button {
-            text: "Abbrechen"
+        QQC2.AbstractButton {
+            id: cancel
             Layout.alignment: Qt.AlignHCenter
+            implicitWidth: Kirigami.Units.gridUnit * 7
+            implicitHeight: Kirigami.Units.gridUnit * 2
+            activeFocusOnTab: true
+            Keys.onReturnPressed: clicked()
+            Keys.onEnterPressed: clicked()
+            Keys.onUpPressed: nextItemInFocusChain(false).forceActiveFocus()
             onClicked: menu.hide()
+            background: Rectangle {
+                radius: Kirigami.Units.cornerRadius
+                color: cancel.down ? "#40ffffff" : (cancel.hovered || cancel.activeFocus ? "#33ffffff" : "#1affffff")
+                border.color: cancel.activeFocus ? "#ccffffff" : "#80ffffff"
+            }
+            contentItem: QQC2.Label {
+                text: "Abbrechen"
+                color: "white"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
         }
     }
 

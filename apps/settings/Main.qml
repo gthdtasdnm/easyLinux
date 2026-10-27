@@ -14,7 +14,7 @@ Kirigami.ApplicationWindow {
     visible: true
 
     property string category: "system"
-    property string view: "category"          // category | kcm | installed
+    property string view: "category"          // category | kcm | installed | display | snapassist
     property var entry: null                  // geöffnete Einstellung (für die Überschrift)
     readonly property bool searching: searchField.text.trim().length > 0
     readonly property var categoryInfo: {
@@ -49,6 +49,8 @@ Kirigami.ApplicationWindow {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "installed"; root.entry = e; backend.loadApps() })
         } else if (e.target === "page:display") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "display"; root.entry = e; display.refresh() })
+        } else if (e.target === "page:snapassist") {
+            leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "snapassist"; root.entry = e })
         } else if (e.target.startsWith("kcm_") && root.kcm) {
             leaveKcm(() => {
                 if (root.kcm.open(e.target)) {
@@ -287,6 +289,15 @@ Kirigami.ApplicationWindow {
                         onAdvanced: root.openEntry({ title: "Erweiterte Anzeigeeinstellungen", subtitle: "", icon: "preferences-desktop-display",
                                                      target: "kcm_kscreen", categoryKey: "system", category: "System", external: false })
                     }
+                }
+
+                // ---- Snap Assist
+                Loader {
+                    active: !root.searching && root.view === "snapassist"
+                    visible: active
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    sourceComponent: SnapAssistPage {}
                 }
 
                 // ---- Installierte Apps

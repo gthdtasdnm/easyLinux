@@ -4,8 +4,10 @@ import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kwin
 
-// Auswahl in der freien Bildschirmhälfte: Vorschaubilder der übrigen Fenster, mittig in Reihen angeordnet.
-// Nur die Vorschaubilder sind anklickbar – ein Klick daneben bricht ab.
+// Auswahl in einem freien Bereich: Vorschaubilder der übrigen Fenster, mittig in Reihen angeordnet.
+// Nur die Vorschaubilder sind anklickbar – ein Klick daneben bricht ab. Beim Viertel sind zwei Auswahlen
+// gleichzeitig offen; Wählen oder Abbrechen in einer schließt beide.
+// Fenster von einem anderen Bildschirm tragen ein kleines Bildschirm-Symbol.
 // (PlasmaCore.Dialog statt QtQuick-Window: „Window“ bezeichnet in org.kde.kwin ein Programmfenster.)
 PlasmaCore.Dialog {
     id: picker
@@ -16,7 +18,7 @@ PlasmaCore.Dialog {
     title: root.pickerTitle
 
     property var windows: []
-    property bool toLeft: false
+    property var zone: null        // { rect, slot, output } – wohin das gewählte Fenster kommt
     property rect area
     property var source: null      // das gerade angedockte Fenster
     property bool settling: false  // kurz nach dem Öffnen: Aktivierungen durch das Andocken selbst ignorieren
@@ -76,20 +78,21 @@ PlasmaCore.Dialog {
         return result;
     }
 
-    function show(freeArea, candidates, left, sourceWindow) {
+    function show(freeZone, candidates, sourceWindow) {
         picker.windows = candidates;
-        picker.toLeft = left;
-        picker.area = freeArea;
+        picker.zone = freeZone;
+        picker.area = freeZone.rect;
         picker.source = sourceWindow;
-        content.width = freeArea.width;
-        content.height = freeArea.height;
+        content.width = freeZone.rect.width;
+        content.height = freeZone.rect.height;
         settling = true;
         visible = true;
+        place.tries = 0;
         place.restart();
         settle.restart();
     }
     function close() { visible = false; windows = []; source = null }
-    function choose(window) { close(); root.pick(window, picker.toLeft) }
+    function choose(window) { root.pick(window, picker.zone) }
 
     mainItem: Rectangle {
         id: content
@@ -97,30 +100,43 @@ PlasmaCore.Dialog {
         color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.85)
         border.color: Qt.alpha(Kirigami.Theme.highlightColor, 0.6)
 
-        // KWin platziert neue Fenster selbst – danach an die freie Hälfte setzen.
+        // KWin platziert das Fenster beim Anzeigen selbst (beim erneuten Öffnen mittig) – danach an den freien
+        // Bereich setzen. Zuerst ein Pixel daneben: hat x schon den Zielwert (vom letzten Mal), ignoriert Qt
+        // das Setzen sonst, obwohl KWin das Fenster woanders hingestellt hat.
         Timer {
             id: place
-            interval: 1
-            onTriggered: { picker.x = picker.area.x; picker.y = picker.area.y; picker.requestActivate() }
+            property int tries: 0
+            interval: 30
+            repeat: true
+            onTriggered: {
+                const nudge = tries === 0 ? 1 : 0;
+                picker.x = picker.area.x + nudge;
+                picker.y = picker.area.y + nudge;
+                if (tries++ === 1)
+                    picker.requestActivate();
+                if (tries >= 10)
+                    stop();
+            }
         }
         Timer { id: settle; interval: 800; onTriggered: picker.settling = false }
 
         Connections {
             target: Workspace
             // Benutzer wechselt zu einem anderen Fenster → Auswahl schließen.
-            // Das angedockte Fenster selbst wird beim Loslassen der Maus oft noch einmal aktiviert – das zählt nicht.
+            // Das angedockte Fenster selbst wird beim Loslassen der Maus oft noch einmal aktiviert – das zählt nicht,
+            // ebenso wenig ein Klick in die zweite Auswahl.
             function onWindowActivated(window) {
                 if (!picker.visible || !window || window.caption === picker.title)
                     return;
                 if (window === picker.source && picker.settling)
                     return;
-                picker.close();
+                root.closePickers();
             }
         }
 
-        MouseArea { anchors.fill: parent; onClicked: picker.close() }  // Klick daneben = abbrechen
+        MouseArea { anchors.fill: parent; onClicked: root.closePickers() }  // Klick daneben = abbrechen
         focus: true
-        Keys.onEscapePressed: picker.close()
+        Keys.onEscapePressed: root.closePickers()
 
         QQC2.Label {
             id: heading
@@ -136,6 +152,7 @@ PlasmaCore.Dialog {
                 id: card
                 required property var modelData
                 readonly property var window: picker.windows[modelData.index]
+                readonly property bool elsewhere: window && picker.zone && window.output !== picker.zone.output
                 x: modelData.x
                 y: modelData.y
                 width: modelData.w
@@ -163,8 +180,16 @@ PlasmaCore.Dialog {
                     QQC2.Label {
                         anchors.verticalCenter: parent.verticalCenter
                         text: card.window ? card.window.caption : ""
-                        width: Math.min(implicitWidth, card.width - Kirigami.Units.gridUnit * 2.5)
+                        width: Math.min(implicitWidth, card.width - Kirigami.Units.gridUnit * (card.elsewhere ? 4 : 2.5))
                         elide: Text.ElideRight
+                    }
+                    Kirigami.Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: card.elsewhere
+                        source: "video-display"
+                        width: Kirigami.Units.iconSizes.small
+                        height: width
+                        opacity: 0.7
                     }
                 }
                 HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }

@@ -24,6 +24,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 from easylinux import desktop, single
 from display import Display
+from snapassist import SnapAssist
 from settings_entries import CATEGORIES, ENTRIES
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -323,6 +324,8 @@ def main():
     display = Display()
     display.message.connect(backend.message)
     engine.rootContext().setContextProperty("display", display)
+    snap_assist = SnapAssist()
+    engine.rootContext().setContextProperty("snapAssist", snap_assist)
     engine.rootContext().setContextProperty("kcmHostAvailable", host)
     engine.rootContext().setContextProperty("startPage", page)
     engine.load(os.path.join(HERE, "Main.qml"))
