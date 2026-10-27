@@ -4,11 +4,12 @@ Plasma startet jede App in einer eigenen Gruppe (z. B. app-org.kde.dolphin@….s
 Darüber lassen sich alle Prozesse einer App zusammenfassen, messen und gemeinsam beenden.
 """
 import os
+import pwd
 import re
+import subprocess
 import time
 
 from . import desktop
-
 
 
 def user_root(uid):
@@ -45,6 +46,17 @@ def _read(path, default=""):
         return default
 
 
+def _io_bytes(cg):
+    """Gelesene + geschriebene Bytes einer Gruppe (io.stat, alle Laufwerke)."""
+    total = 0
+    for line in _read(os.path.join(cg, "io.stat")).splitlines():
+        for field in line.split()[1:]:
+            k, _, v = field.partition("=")
+            if k in ("rbytes", "wbytes"):
+                total += int(v)
+    return total
+
+
 def _cpu_usec(cg):
     for line in _read(os.path.join(cg, "cpu.stat")).splitlines():
         if line.startswith("usage_usec"):
@@ -57,7 +69,32 @@ class App:
         self.unit, self.path, self.entry, self.app_id = unit, path, entry, app_id
         self.cpu = 0.0      # Prozent einer CPU-Gesamtleistung (alle Kerne = 100 %)
         self.memory = 0     # Bytes
+        self.disk = 0.0     # Bytes pro Sekunde (lesen + schreiben)
         self.pids = []
+
+    @property
+    def efficient(self):
+        """Effizienzmodus: niedrigere Gewichtung für Prozessor und Datenträger."""
+        w = _read(os.path.join(self.path, "cpu.weight")).strip()
+        return w.isdigit() and int(w) < 100
+
+    def set_efficient(self, on):
+        weight = "20" if on else "100"
+        r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", self.unit,
+                            f"CPUWeight={weight}", f"IOWeight={weight}"], capture_output=True)
+        return r.returncode == 0
+
+    @property
+    def exe(self):
+        """Programmdatei des Hauptprozesses (für „Dateispeicherort öffnen“)."""
+        for pid in self.pids:
+            try:
+                path = os.readlink(f"/proc/{pid}/exe")
+            except OSError:
+                continue
+            if not os.path.basename(path).startswith(("bwrap", "python", "sh", "bash")):
+                return path.removesuffix(" (deleted)")
+        return ""
 
     @property
     def name(self):
@@ -89,7 +126,7 @@ class Monitor:
 
     def __init__(self, uid=None):
         self.root = user_root(os.getuid() if uid is None else uid)
-        self._last = {}       # Pfad → (Zeit, usage_usec)
+        self._last = {}       # Pfad → (Zeit, usage_usec, io_bytes)
         self._ncpu = os.cpu_count() or 1
 
     def _units(self):
@@ -126,11 +163,12 @@ class Monitor:
             app = App(unit, path, entry, app_id)
             app.pids = pids
             app.memory = int(_read(os.path.join(path, "memory.current"), "0") or 0)
-            usec = _cpu_usec(path)
+            usec, io = _cpu_usec(path), _io_bytes(path)
             last = self._last.get(path)
             if last and now > last[0]:
                 app.cpu = max(0.0, (usec - last[1]) / ((now - last[0]) * 1e6 * self._ncpu) * 100)
-            self._last[path] = (now, usec)
+                app.disk = max(0.0, (io - last[2]) / (now - last[0]))
+            self._last[path] = (now, usec, io)
             apps.append(app)
         # Gleiche App mehrfach gestartet → zusammenfassen
         merged = {}
@@ -140,6 +178,7 @@ class Monitor:
                 m = merged[key]
                 m.cpu += a.cpu
                 m.memory += a.memory
+                m.disk += a.disk
                 m.pids += a.pids
                 m.extra = getattr(m, "extra", []) + [a]
             else:
@@ -152,6 +191,79 @@ def kill_app(app):
     for other in getattr(app, "extra", []):
         ok = other.kill() and ok
     return ok
+
+
+def set_efficient(app, on):
+    ok = app.set_efficient(on)
+    for other in getattr(app, "extra", []):
+        ok = other.set_efficient(on) and ok
+    return ok
+
+
+# ---------------------------------------------------------------- einzelne Prozesse (Details)
+
+# Wie bei Windows: schlafende Prozesse gelten als „wird ausgeführt“
+STATES = {"R": "Wird ausgeführt", "S": "Wird ausgeführt", "I": "Wird ausgeführt", "D": "Wartet auf Datenträger",
+          "Z": "Beendet", "T": "Angehalten", "t": "Angehalten"}
+PF_KTHREAD = 0x00200000
+
+
+class ProcessTable:
+    """Alle Prozesse des Systems mit CPU-Anteil und Speicher – für den Details-Tab."""
+
+    def __init__(self):
+        self._last = {}  # pid → (Zeit, Ticks)
+        self._ncpu = os.cpu_count() or 1
+        self._hz = os.sysconf("SC_CLK_TCK")
+        self._page = os.sysconf("SC_PAGE_SIZE")
+        self._users = {}
+
+    def _user(self, uid):
+        if uid not in self._users:
+            try:
+                self._users[uid] = pwd.getpwuid(uid).pw_name
+            except KeyError:
+                self._users[uid] = str(uid)
+        return self._users[uid]
+
+    def update(self):
+        now = time.monotonic()
+        procs, seen = [], {}
+        for d in os.listdir("/proc"):
+            if not d.isdigit():
+                continue
+            pid = int(d)
+            stat = _read(f"/proc/{d}/stat")
+            if not stat:
+                continue
+            # Name steht in Klammern und darf selbst Klammern/Leerzeichen enthalten
+            name = stat[stat.find("(") + 1:stat.rfind(")")]
+            rest = stat[stat.rfind(")") + 2:].split()
+            if int(rest[6]) & PF_KTHREAD:
+                continue  # Kernel-Threads zeigt auch Windows nicht
+            ticks = int(rest[11]) + int(rest[12])
+            rss = int(rest[21]) * self._page
+            last = self._last.get(pid)
+            cpu = 0.0
+            if last and now > last[0]:
+                cpu = max(0.0, (ticks - last[1]) / self._hz / (now - last[0]) / self._ncpu * 100)
+            seen[pid] = (now, ticks)
+            try:
+                uid = os.stat(f"/proc/{d}").st_uid
+            except OSError:
+                continue
+            argv = _read(f"/proc/{d}/cmdline").split("\0")
+            cmd = " ".join(argv).strip()
+            # Der Kernel kürzt Namen auf 15 Zeichen – vollständigen Namen aus der Befehlszeile nehmen
+            full = os.path.basename(argv[0]) if argv and argv[0] else ""
+            if len(name) == 15 and full.startswith(name):
+                name = full
+            procs.append({"pid": pid, "name": name, "status": STATES.get(rest[0], rest[0]),
+                          "user": self._user(uid), "uid": uid, "cpu": cpu, "memory": rss,
+                          "nice": int(rest[16]), "command": cmd or f"[{name}]",
+                          "threads": int(rest[17])})
+        self._last = seen
+        return procs
 
 
 class SystemStats:

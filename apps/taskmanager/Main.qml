@@ -3,159 +3,153 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
+// Taskmanager wie bei Windows 11: links die Bereiche, oben Suche und Aktionen der Seite.
 Kirigami.ApplicationWindow {
     id: root
     title: "Taskmanager"
-    width: Kirigami.Units.gridUnit * 38
-    height: Kirigami.Units.gridUnit * 32
-    minimumWidth: Kirigami.Units.gridUnit * 26
-    minimumHeight: Kirigami.Units.gridUnit * 20
+    width: Kirigami.Units.gridUnit * 56
+    height: Kirigami.Units.gridUnit * 36
+    minimumWidth: Kirigami.Units.gridUnit * 36
+    minimumHeight: Kirigami.Units.gridUnit * 22
     visible: false
 
     // Schließen versteckt nur – so öffnet der Taskmanager beim nächsten Mal sofort.
     onClosing: (close) => { close.accepted = false; root.visible = false }
-    onVisibleChanged: { backend.setActive(visible); if (visible) list.forceActiveFocus() }
+    onVisibleChanged: { backend.setActive(visible); if (visible) pages.currentItem().focusList() }
 
-    property string selectedKey: ""
-    property string selectedName: ""
+    readonly property var tabs: [
+        { key: "processes", title: "Prozesse", icon: "view-list-details" },
+        { key: "performance", title: "Leistung", icon: "office-chart-area" },
+        { key: "autostart", title: "Autostart-Apps", icon: "system-run" },
+        { key: "details", title: "Details", icon: "view-list-text" },
+        { key: "services", title: "Dienste", icon: "preferences-system-services" }
+    ]
+    property int tab: 0
+    readonly property string page: tabs[tab].key
+    onPageChanged: { search.text = ""; backend.setPage(page) }
 
-    Shortcut { sequence: "Delete"; enabled: root.selectedKey !== ""; onActivated: backend.endTask(root.selectedKey) }
+    function showTab(key) { root.tab = tabs.findIndex(t => t.key === key) }
+
     Shortcut { sequence: "Escape"; onActivated: root.visible = false }
+    Shortcut { sequence: "Ctrl+Tab"; onActivated: root.tab = (root.tab + 1) % root.tabs.length }
+    Shortcut { sequence: "Ctrl+Shift+Tab"; onActivated: root.tab = (root.tab + root.tabs.length - 1) % root.tabs.length }
 
     Connections {
         target: backend
-        function onMessage(text) { banner.text = text; banner.visible = true; bannerTimer.restart(); root.selectedKey = "" }
+        function onMessage(text) { banner.text = text; banner.visible = true; bannerTimer.restart() }
     }
 
     pageStack.initialPage: Kirigami.Page {
-        title: "Taskmanager"
-        padding: Kirigami.Units.largeSpacing
+        padding: 0
+        titleDelegate: Item {}
+        globalToolBarStyle: Kirigami.ApplicationHeaderStyle.None
 
-        ColumnLayout {
+        RowLayout {
             anchors.fill: parent
-            spacing: Kirigami.Units.largeSpacing
+            spacing: 0
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.largeSpacing
-                UsageCard { title: "Prozessor"; value: backend.cpu; detail: backend.cpu.toFixed(0) + " %"; color: Kirigami.Theme.highlightColor }
-                UsageCard { title: "Arbeitsspeicher"; value: backend.memoryPercent; detail: backend.memoryText; color: Kirigami.Theme.positiveTextColor }
+            // ---------------- Navigation
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 11
+                color: Kirigami.Theme.alternateBackgroundColor
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: Kirigami.Units.smallSpacing
+                    spacing: Kirigami.Units.smallSpacing
+                    Repeater {
+                        model: root.tabs
+                        delegate: QQC2.ItemDelegate {
+                            required property var modelData
+                            required property int index
+                            Layout.fillWidth: true
+                            highlighted: root.tab === index
+                            icon.name: modelData.icon
+                            text: modelData.title
+                            onClicked: root.tab = index
+                        }
+                    }
+                    Item { Layout.fillHeight: true }
+                }
             }
 
-            Kirigami.InlineMessage {
-                id: banner
-                Layout.fillWidth: true
-                type: Kirigami.MessageType.Positive
-                visible: false
-                Timer { id: bannerTimer; interval: 4000; onTriggered: banner.visible = false }
-            }
-
-            QQC2.ScrollView {
+            // ---------------- Inhalt
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                ListView {
-                    id: list
-                    model: backend.apps
-                    clip: true
-                    focus: true
-                    keyNavigationEnabled: true
-                    currentIndex: -1
-                    highlightFollowsCurrentItem: false
-                    onCurrentItemChanged: if (currentItem) { root.selectedKey = currentItem.key; root.selectedName = currentItem.name }
-                    section.property: "isApp"
-                    section.delegate: Kirigami.ListSectionHeader {
-                        width: ListView.view.width
-                        required property bool section
-                        text: section ? "Apps" : "Hintergrundprozesse"
+                spacing: 0
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.margins: Kirigami.Units.largeSpacing
+                    spacing: Kirigami.Units.largeSpacing
+                    Kirigami.Heading { level: 2; text: root.tabs[root.tab].title }
+                    Kirigami.SearchField {
+                        id: search
+                        visible: root.page !== "performance" && root.page !== "autostart"
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: Kirigami.Units.gridUnit * 18
+                        placeholderText: root.page === "details" ? "Name, PID oder Benutzer suchen …" : "Suchen …"
+                        onTextChanged: backend.setFilter(text)
+                        Keys.onDownPressed: pages.currentItem().focusList(true)
+                        Keys.onReturnPressed: pages.currentItem().focusList(true)
                     }
-                    header: RowLayout {
-                        width: list.width
-                        QQC2.Label { text: "Name"; Layout.fillWidth: true; leftPadding: Kirigami.Units.gridUnit * 2; opacity: 0.7 }
-                        QQC2.Label { text: "Prozessor"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight; opacity: 0.7 }
-                        QQC2.Label { text: "Speicher"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6; horizontalAlignment: Text.AlignRight; rightPadding: Kirigami.Units.largeSpacing; opacity: 0.7 }
+                    Item { Layout.fillWidth: true }
+                    QQC2.Button {
+                        text: "Neuen Task ausführen"
+                        icon.name: "system-run"
+                        visible: root.page === "processes" || root.page === "details"
+                        onClicked: runDialog.open()
                     }
-                    delegate: QQC2.ItemDelegate {
-                        required property string key
-                        required property string name
-                        required property string iconName
-                        required property real cpu
-                        required property string memoryText
-                        required property int count
-                        width: ListView.view.width
-                        highlighted: root.selectedKey === key
-                        focusPolicy: Qt.NoFocus
-                        required property int index
-                        onClicked: { list.currentIndex = index; root.selectedKey = key; root.selectedName = name }
-                        onDoubleClicked: backend.endTask(key)
-                        contentItem: RowLayout {
-                            spacing: Kirigami.Units.largeSpacing
-                            Kirigami.Icon { source: iconName; Layout.preferredWidth: Kirigami.Units.iconSizes.medium; Layout.preferredHeight: Layout.preferredWidth }
-                            QQC2.Label { text: count > 1 ? name + "  (" + count + ")" : name; Layout.fillWidth: true; elide: Text.ElideRight }
-                            QQC2.Label { text: cpu.toFixed(1).replace(".", ",") + " %"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
-                            QQC2.Label { text: memoryText; Layout.preferredWidth: Kirigami.Units.gridUnit * 6; horizontalAlignment: Text.AlignRight }
+                    Repeater {
+                        model: pages.currentItem().actions || []
+                        delegate: QQC2.Button {
+                            required property var modelData
+                            action: modelData
+                            display: QQC2.AbstractButton.TextBesideIcon
                         }
                     }
                 }
-            }
 
-            RowLayout {
-                Layout.fillWidth: true
-                QQC2.Label {
+                Kirigami.InlineMessage {
+                    id: banner
                     Layout.fillWidth: true
-                    opacity: 0.7
-                    wrapMode: Text.Wrap
-                    text: root.selectedKey ? "Ausgewählt: " + root.selectedName : "Wählen Sie eine App aus, die nicht mehr reagiert."
+                    Layout.leftMargin: Kirigami.Units.largeSpacing
+                    Layout.rightMargin: Kirigami.Units.largeSpacing
+                    type: Kirigami.MessageType.Information
+                    showCloseButton: true
+                    visible: false
+                    Timer { id: bannerTimer; interval: 5000; onTriggered: banner.visible = false }
                 }
-                QQC2.Button {
-                    text: "Task beenden"
-                    icon.name: "process-stop"
-                    enabled: root.selectedKey !== ""
-                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
-                    padding: Kirigami.Units.largeSpacing
-                    onClicked: backend.endTask(root.selectedKey)
+
+                StackLayout {
+                    id: pages
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    currentIndex: root.tab
+                    function currentItem() { return children[currentIndex] }
+
+                    ProcessesPage { onDetailsRequested: root.showTab("details") }
+                    PerformancePage {}
+                    AutostartPage {}
+                    DetailsPage {}
+                    ServicesPage {}
                 }
             }
         }
     }
 
-    // Kachel mit Prozent, Text und kleinem Verlaufsdiagramm
-    component UsageCard: Kirigami.AbstractCard {
-        id: card
-        property string title
-        property real value
-        property string detail
-        property color color
-        property var history: []
-        Layout.fillWidth: true
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 6
-        onValueChanged: { history = history.concat([value]).slice(-60); canvas.requestPaint() }
-        contentItem: ColumnLayout {
-            RowLayout {
-                QQC2.Label { text: card.title; font.bold: true; Layout.fillWidth: true }
-                QQC2.Label { text: card.detail }
-            }
-            Canvas {
-                id: canvas
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                onPaint: {
-                    const ctx = getContext("2d")
-                    ctx.reset()
-                    const h = card.history, n = 60
-                    if (h.length < 2) return
-                    ctx.beginPath()
-                    ctx.moveTo(width - (h.length - 1) * width / (n - 1), height)
-                    for (let i = 0; i < h.length; i++)
-                        ctx.lineTo(width - (h.length - 1 - i) * width / (n - 1), height - h[i] / 100 * height)
-                    ctx.lineTo(width, height)
-                    ctx.closePath()
-                    ctx.fillStyle = Qt.alpha(card.color, 0.25)
-                    ctx.fill()
-                    ctx.strokeStyle = card.color
-                    ctx.lineWidth = 2
-                    ctx.stroke()
-                }
-            }
+    Kirigami.PromptDialog {
+        id: runDialog
+        title: "Neuen Task ausführen"
+        subtitle: "Geben Sie den Namen eines Programms ein, z. B. „dolphin“ oder „firefox“."
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        onOpened: { runField.text = ""; runField.forceActiveFocus() }
+        onAccepted: backend.runTask(runField.text)
+        QQC2.TextField {
+            id: runField
+            placeholderText: "Programm"
+            onAccepted: runDialog.accept()
         }
     }
 }
