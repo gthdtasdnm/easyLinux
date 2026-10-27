@@ -7,7 +7,7 @@ Modernes, einheitliches Design, verständliche Namen, Struktur und Bedienung ang
 Alles soll als Repo veröffentlicht werden, das andere herunterladen und bei sich installieren können
 (erst `install.sh` + `uninstall.sh` mit Sicherung der alten Einstellungen, später Arch-Pakete / AUR).
 
-> Status: **Grundgerüst steht und ist in der VM getestet** – Installer/Deinstaller, Taskleiste & Startmenü, Benachrichtigungen.
+> Status: **Erste vollständige Version, in einer frischen CachyOS-VM getestet.** Alle 10 Punkte unten sind umgesetzt (Medienplayer und Snap Assist in einfacher Form bzw. noch offen) – Details je Punkt unter „Stand“.
 
 ## Installieren / Entfernen
 
@@ -21,15 +21,38 @@ Gesichert wird nach `~/.local/share/easylinux/backup/` – immer der Stand **vor
 ## Aufbau
 
 ```
-install.sh / uninstall.sh   Einstieg, ohne Rückfragen
-lib/common.sh               Sichern, Wiederherstellen, Plasma steuern
-modules/NN-name/apply.sh    ein Modul pro Funktion, laufen in Nummern-Reihenfolge
-  10-layout/                Taskleiste & Startmenü (layout.js = Plasma-Skript)
-  20-notifications/         Popups verschwinden nach 6 s, Verlauf bleibt
-tools/vm/                   Test-VM vom Host aus steuern (SSH, Screenshots, Tastatur, Maus)
+install.sh / uninstall.sh   Einstieg, ohne Rückfragen (einmal Passwort für systemweite Teile)
+lib/common.sh               Sichern/Wiederherstellen, systemweite Änderungen protokollieren
+apps/                       Programme (Python + Qt/QML mit Kirigami, passend zu KDE)
+  easylinux/                gemeinsame Bausteine (Apps über systemd-Gruppen, .desktop-Dateien)
+  taskmanager/              Taskmanager + Strg+Alt+Entf-Bildschirm (ein vorgeladener Prozess)
+  emergency/                Notfall-Dienst (root) + Textmenü auf Konsole 9
+  updater/                  Update-Manager + root-Helfer (pkexec)
+  settings/                 Einstellungen mit Windows-Struktur
+  openfile/                 Doppelklick-Installation
+bin/                        Startskripte, easylinux-names, easylinux-shortcut
+data/names.conf             Tabelle der einheitlichen App-Namen
+modules/NN-name/            apply.sh (+ revert.sh) je Funktion, laufen in Nummern-Reihenfolge
+tools/vm/                   Test-VM vom Host aus steuern
 ```
 
-Jedes Modul ruft vor einer Änderung `backup_config <datei>` auf – so bleibt alles rückgängig machbar.
+Jede Änderung wird protokolliert (`backup_config`, `sys_put`, `pkg_need`, `unit_enable` …) – `uninstall.sh` nimmt sie
+vollständig zurück. Getestet: Installation → Neustart → Deinstallation; Pakete, Dienste und Dateien sind danach wie vorher.
+
+## Stand (27.10.2026)
+
+| # | Funktion | Stand |
+|---|---|---|
+| 1 | Startmenü & Taskleiste | ✅ schwebende Leiste, angeheftet: Einstellungen, Dateien, Browser, Taskmanager. Offen: Startmenü-Favoriten (verwaltet Plasma selbst), mehrere Bildschirme |
+| 2 | Taskmanager | ✅ Strg+Umschalt+Esc, Apps statt Prozesse (über systemd-Gruppen), CPU/RAM mit Verlauf, „Task beenden“ beendet die ganze App, vorgeladen mit hoher Priorität, Tastaturbedienung |
+| 3 | Strg+Alt+Entf | ✅ Windows-Bildschirm (Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren) · ✅ Speicher-Wächter (oomd greift nach 10 s ein, Plasma meldet die App) · ✅ Notfall-Dienst: bei eingefrorener Oberfläche Textmenü auf Konsole 9 – getestet mit eingefrorenem KWin |
+| 4 | Einheitliche Namen | ✅ Dateien, Terminal, Editor, Bilder, Rechner, Bildschirmfoto, Medienplayer (Haruna) …; Entwickler-/Doppel-Apps ausgeblendet; pacman-Hook hält es nach Updates aktuell. Offen: eigener Medienplayer |
+| 5 | Design | ✅ Flatpak-Apps übernehmen Farben/Schrift; GTK nutzt bereits Breeze. Offen: Akzentfarbe vom Hintergrund, eigenes Gesamtdesign |
+| 6 | Update-Manager | ✅ ein Klick, Fortschritt + Restzeit, Admins ohne Passwort (Polkit, nur diese Aktion), Sicherheitsupdates markiert (arch-audit), Flatpak, Selbstheilung (Sperre, Schlüsselbund, 404 → Spiegel neu bewerten), „Neustart nötig“, sanfte Erinnerung. Sicherungspunkte macht CachyOS bereits (snap-pac) |
+| 7 | Einstellungen | ✅ Windows-Bereiche, Suche mit Synonymen, KDE-Seiten eingebunden, „Installierte Apps“ mit Deinstallieren. Offen: eigene Laufwerks-Seite (bisher: Automount-Seite + Partitionsverwaltung) |
+| 8 | Doppelklick-Installation | ✅ .AppImage (→ ~/Programme + Startmenü + Symbol), .flatpakref, .pkg.tar.zst, .deb/.rpm → Alternative anbieten |
+| 9 | Benachrichtigungen | ✅ 6 Sekunden, Verlauf. Offen: Apps, die „dauerhaft“ erzwingen |
+| 10 | Snap Assist | ⏳ offen |
 
 ---
 
@@ -153,4 +176,7 @@ Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später 
 - [x] Aktuelles Plasma-Layout des Autors auslesen (`~/.config/plasma-org.kde.plasma.desktop-appletsrc` u. a.) und als Basis sichern
 - [x] Git-Repo + Projektstruktur anlegen
 - [x] `install.sh` / `uninstall.sh` in der VM testen (Startmenü-Symbol der Distribution bleibt jetzt erhalten)
-- [ ] Einheitliche App-Namen, Design, mehrere Bildschirme
+- [x] Einheitliche App-Namen, Taskmanager, Strg+Alt+Entf, Notfall-Dienst, Speicher-Wächter, Update-Manager, Doppelklick-Installation, Einstellungen
+- [ ] Auf dem eigenen PC ausprobieren (vorher Btrfs-Snapshot)
+- [ ] Startmenü-Favoriten, mehrere Bildschirme, Snap Assist, eigener Medienplayer, Laufwerks-Seite
+- [ ] Später: als Arch-/AUR-Paket
