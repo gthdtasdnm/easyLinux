@@ -40,7 +40,7 @@ var tasks = panel.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
 // Angeheftete Apps: nur Dinge, die es auf jedem frischen System gibt.
 tasks.writeConfig("launchers", [
-    "applications:systemsettings.desktop",
+    "applications:easylinux-settings.desktop",
     "preferred://filemanager",
     "preferred://browser",
     "applications:easylinux-taskmanager.desktop"

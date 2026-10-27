@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Einstellungen
+Comment=Alle Einstellungen des Computers – übersichtlich wie bei Windows
+Exec=/opt/easylinux/bin/easylinux-settings
+Icon=preferences-system
+Categories=Settings;System;
+Keywords=Einstellungen;Optionen;Konfiguration;Systemsteuerung;Control Panel;Settings;
+Actions=installed;
+
+[Desktop Action installed]
+Name=Installierte Apps
+Exec=/opt/easylinux/bin/easylinux-settings installed
