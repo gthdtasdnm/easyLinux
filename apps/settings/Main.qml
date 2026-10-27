@@ -168,18 +168,25 @@ Kirigami.ApplicationWindow {
                         Keys.onDownPressed: { results.forceActiveFocus(); results.currentIndex = 0 }
                     }
 
-                    Repeater {
-                        model: backend.categories
-                        delegate: QQC2.ItemDelegate {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            highlighted: !root.searching && root.category === modelData.key
-                            icon.name: modelData.icon
-                            text: modelData.title
-                            onClicked: root.showCategory(modelData.key)
+                    // Bereiche – bei kleinem Fenster scrollbar
+                    QQC2.ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
+                        ListView {
+                            clip: true
+                            spacing: Kirigami.Units.smallSpacing
+                            model: backend.categories
+                            delegate: QQC2.ItemDelegate {
+                                required property var modelData
+                                width: ListView.view.width
+                                highlighted: !root.searching && root.category === modelData.key
+                                icon.name: modelData.icon
+                                text: modelData.title
+                                onClicked: root.showCategory(modelData.key)
+                            }
                         }
                     }
-                    Item { Layout.fillHeight: true }
                 }
             }
 
