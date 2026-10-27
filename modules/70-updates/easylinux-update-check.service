@@ -1,0 +1,7 @@
+[Unit]
+Description=easyLinux: nach Updates sehen und ggf. sanft erinnern
+
+[Service]
+Type=oneshot
+ExecStart=/opt/easylinux/bin/easylinux-updater --check
+Nice=10

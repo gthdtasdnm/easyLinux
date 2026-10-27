@@ -143,6 +143,7 @@ Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später 
 - **Langsames Netz in der VM:** GNOME Boxes erkennt CachyOS nicht und nimmt alte Hardware (rtl8139) → ~100 B/s. Mit virtio volle Geschwindigkeit.
 - **Installer bricht beim Schlüsselbund ab:** Ein Schlüssel im aktuellen `archlinux-keyring` hatte einen Zeitstempel in der Zukunft → „could not be locally signed“. Gelöst mit `ignore-time-conflict` während der Installation.
 - **Spiegelserver mit 404-Fehlern** (cdn77) – genau das Problem aus Punkt 6 (Update-Manager).
+- **snap-pac stürzt bei `%` in der pacman-Befehlszeile ab** (z. B. `pacman -U https://…%3A…`): „invalid interpolation syntax“ → pacman bricht mit „Konnte die Vorgangs-Hooks nicht starten“ ab. Für Einsteiger unverständlich.
 - **Installer-Firewall greift auf die Live-Umgebung über:** Der Schritt „UFW aktivieren“ blockiert danach auch eingehende Verbindungen im Live-System.
 
 ## Nächste Schritte

@@ -1,0 +1,10 @@
+[Unit]
+Description=easyLinux: täglich nach Updates sehen
+
+[Timer]
+OnStartupSec=15min
+OnUnitActiveSec=1d
+Persistent=true
+
+[Install]
+WantedBy=timers.target

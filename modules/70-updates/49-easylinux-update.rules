@@ -1,0 +1,7 @@
+// easyLinux: Administratoren dürfen Updates ohne Passwort installieren –
+// nur genau diese eine Aktion, nur in der aktiven Sitzung am Gerät.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.easylinux.update" && subject.isInGroup("wheel") && subject.active && subject.local) {
+        return polkit.Result.YES;
+    }
+});

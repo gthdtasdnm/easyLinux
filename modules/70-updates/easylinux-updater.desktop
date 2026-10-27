@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Updates
+Comment=Computer und Apps auf den neuesten Stand bringen
+Exec=/opt/easylinux/bin/easylinux-updater
+Icon=system-software-update
+Categories=System;Settings;
+Keywords=Update;Aktualisierung;Aktualisieren;Upgrade;Sicherheit;pacman;
