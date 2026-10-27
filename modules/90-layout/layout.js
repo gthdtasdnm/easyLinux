@@ -11,8 +11,9 @@ panels().forEach(function (p) {
     });
 });
 
-// Vorhandene Leisten entfernen, damit das Ergebnis immer gleich aussieht.
-panels().forEach(function (p) { p.remove(); });
+// Leisten auf dem Hauptbildschirm ersetzen. Leisten auf weiteren Bildschirmen bleiben, wie sie sind –
+// eine neue Leiste legt Plasma immer auf dem Hauptbildschirm an.
+panels().forEach(function (p) { if (p.screen === 0) p.remove(); });
 
 var panel = new Panel;
 panel.location = "bottom";
