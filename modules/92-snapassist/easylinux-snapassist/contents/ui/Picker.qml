@@ -24,7 +24,7 @@ PlasmaCore.Dialog {
     // Anordnung wie eine Fotogalerie: Fenster in Reihen nebeneinander, jedes im eigenen Seitenverhältnis.
     // Gesucht wird die größte Bildhöhe, bei der alle Reihen in die freie Fläche passen – so stehen die
     // Fenster bei breiter Fläche von selbst nebeneinander, bei hoher eher untereinander.
-    readonly property int gap: Kirigami.Units.gridUnit
+    readonly property int gap: Kirigami.Units.gridUnit * 2.5      // Platz zwischen den Bildern zum Danebenklicken
     readonly property int captionHeight: Kirigami.Units.gridUnit * 2
     readonly property int pad: Kirigami.Units.smallSpacing      // Rahmen um das Vorschaubild
     readonly property var boxes: {
@@ -55,7 +55,7 @@ PlasmaCore.Dialog {
             return total <= H ? rows : null;
         };
         // Nicht größer als knapp die halbe Höhe – sonst wirkt ein einzelnes Fenster riesig
-        let lo = 20, hi = Math.max(20, H * 0.45);
+        let lo = 20, hi = Math.max(20, H * 0.38);
         for (let k = 0; k < 24; k++) {
             const mid = (lo + hi) / 2;
             if (pack(mid)) lo = mid; else hi = mid;
