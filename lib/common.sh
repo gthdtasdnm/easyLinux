@@ -155,6 +155,24 @@ remove_empty_dirs() {
     done
 }
 
+# Benutzer/Gruppen entfernen, die nur für die entfernten Pakete angelegt wurden –
+# aber nie solche, die ein noch installiertes Paket weiterhin anlegt.
+remove_sysusers() {
+    local kind name
+    while read -r kind name; do
+        [ -n "$name" ] || continue
+        if cat /usr/lib/sysusers.d/*.conf 2>/dev/null | awk -v n="$name" '$2 == n {f=1} END {exit !f}'; then
+            continue
+        fi
+        if [ "$kind" = u ] && getent passwd "$name" >/dev/null; then
+            root userdel "$name" 2>/dev/null || true
+        fi
+        if getent group "$name" >/dev/null; then
+            root groupdel "$name" 2>/dev/null || true
+        fi
+    done <<< "$1"
+}
+
 restore_system() {
     [ -d "$EASYLINUX_SYS" ] || return 0
     local f
@@ -177,8 +195,14 @@ restore_system() {
     fi
     root systemctl daemon-reload
     if [ -s "$EASYLINUX_SYS/packages.txt" ]; then
+        # Systembenutzer/-gruppen, die diese Pakete angelegt haben (pacman entfernt sie nicht)
+        local sysusers
+        # shellcheck disable=SC2046
+        sysusers="$(pacman -Qlq $(cat "$EASYLINUX_SYS/packages.txt") 2>/dev/null | grep '^/usr/lib/sysusers.d/.*\.conf$' \
+            | xargs -r awk '$1 ~ /^[ug]$/ {print $1, $2}' | sort -u)"
         # shellcheck disable=SC2046
         root pacman -Rns --noconfirm $(cat "$EASYLINUX_SYS/packages.txt") || warn "Einige Pakete konnten nicht entfernt werden."
+        remove_sysusers "$sysusers"
     fi
     root rm -rf "$EASYLINUX_SYS"
     root systemctl try-restart systemd-oomd.service 2>/dev/null || true
