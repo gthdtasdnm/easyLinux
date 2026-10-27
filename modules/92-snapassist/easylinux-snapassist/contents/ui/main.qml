@@ -32,7 +32,7 @@ Item {
     }
 
     function tiled(window) {
-        if (busy || !window.tile || window !== Workspace.activeWindow)
+        if (busy || !window.tile || window.minimized)
             return;
         const area = Workspace.clientArea(KWin.MaximizeArea, window);
         const g = window.tile.absoluteGeometry;
@@ -60,7 +60,7 @@ Item {
             return;
         if (!pickerLoader.item)
             pickerLoader.source = "Picker.qml";
-        pickerLoader.item.show(free, candidates, !left);
+        pickerLoader.item.show(free, candidates, !left, window);
     }
 
     function pick(window, toLeft) {
