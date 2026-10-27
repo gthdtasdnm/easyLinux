@@ -6,6 +6,7 @@
   .pkg.tar.zst   → nach Rückfrage mit pacman installieren
   .deb / .rpm    → erklären, warum das nicht passt, und dieselbe App aus den Paketquellen
                    oder von Flathub anbieten
+Ist der Virenschutz (Sicherheit-App) eingerichtet, wird die Datei vorher mit ClamAV geprüft.
 """
 import glob
 import os
@@ -53,6 +54,25 @@ def run_with_progress(cmd, text):
 
 def slug(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "app"
+
+
+# ---------------------------------------------------------------- Virenprüfung
+
+def virus_free(path):
+    """Datei mit ClamAV prüfen, falls der Virenschutz eingerichtet ist. False = Bedrohung gefunden."""
+    if not shutil.which("clamscan") or not glob.glob("/var/lib/clamav/daily.c[lv]d"):
+        return True
+    r = run_with_progress(["clamscan", "--no-summary", "--stdout", path],
+                          f"„{os.path.basename(path)}“ wird auf Viren geprüft …")
+    if r.returncode != 1:
+        return True  # sauber – oder Prüfung nicht möglich: dann nicht blockieren
+    threat = r.stdout.strip().rpartition(": ")[2].removesuffix(" FOUND")
+    if kd("--warningyesno", f"Achtung: In „{os.path.basename(path)}“ wurde Schadsoftware gefunden ({threat}).\n\n"
+          "Die Installation wurde abgebrochen. Soll die Datei gelöscht werden?",
+          "--yes-label", "Löschen", "--no-label", "Behalten").returncode == 0:
+        os.remove(path)
+        notify("Datei gelöscht", f"„{os.path.basename(path)}“ wurde entfernt.", "security-high")
+    return False
 
 
 # ---------------------------------------------------------------- AppImage
@@ -208,6 +228,8 @@ def main():
     path = os.path.abspath(sys.argv[1])
     low = path.lower()
     try:
+        if low.endswith((".appimage", ".pkg.tar.zst", ".pkg.tar.xz", ".pkg.tar.gz", ".pkg.tar")) and not virus_free(path):
+            return
         if low.endswith(".appimage"):
             install_appimage(path)
         elif low.endswith(".flatpakref"):

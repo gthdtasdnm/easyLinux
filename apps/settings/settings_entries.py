@@ -14,7 +14,7 @@ CATEGORIES = [
     ("accounts", "Konten", "system-users", "Benutzer, Anmeldung, Online-Konten"),
     ("time", "Zeit & Sprache", "preferences-system-time", "Datum, Uhrzeit, Sprache, Region"),
     ("access", "Barrierefreiheit", "preferences-desktop-accessibility", "Sehen, Hören, Bedienhilfen"),
-    ("privacy", "Datenschutz & Sicherheit", "preferences-system-privacy", "Sperrbildschirm, Firewall, Passwörter"),
+    ("privacy", "Datenschutz & Sicherheit", "preferences-system-privacy", "Virenschutz, Firewall, Sperrbildschirm, Passwörter"),
     ("update", "Update", "system-software-update", "Updates und Sicherungspunkte"),
 ]
 
@@ -123,6 +123,8 @@ ENTRIES = [
     ("access", "Bildschirmtastatur", "Tastatur auf dem Bildschirm", "input-keyboard-virtual",
      "kcm_virtualkeyboard", "virtuelle tastatur touch"),
     # Datenschutz & Sicherheit
+    ("privacy", "Sicherheit", "Virenschutz, Firewall, Updates und Sicherungspunkte auf einen Blick", "security-high",
+     "app:easylinux-security", "sicherheit virenschutz antivirus viren defender schutz schadsoftware malware trojaner"),
     ("privacy", "Firewall", "Schutz vor Zugriffen aus dem Netzwerk", "security-high",
      "kcm_firewall", "firewall sicherheit schutz ufw"),
     ("privacy", "Passwortspeicher", "Gespeicherte Passwörter (KWallet)", "kwalletmanager",

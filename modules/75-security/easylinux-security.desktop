@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Sicherheit
+Comment=Virenschutz, Firewall, Updates und Sicherungspunkte auf einen Blick
+Exec=/opt/easylinux/bin/easylinux-security
+Icon=security-high
+Categories=Settings;System;Security;
+Keywords=Sicherheit;Virenschutz;Antivirus;Viren;Defender;Firewall;Schutz;Security;

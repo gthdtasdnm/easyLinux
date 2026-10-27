@@ -1,0 +1,3 @@
+#!/bin/sh
+export QSG_RENDER_LOOP="${QSG_RENDER_LOOP:-basic}"
+exec python3 /opt/easylinux/apps/security/main.py "$@"

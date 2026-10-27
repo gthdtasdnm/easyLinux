@@ -1,0 +1,7 @@
+// easyLinux: Administratoren dürfen in der Sicherheit-App ohne Passwort den Zustand abfragen,
+// die Firewall einschalten und den Virenschutz einrichten – nur in der aktiven Sitzung am Gerät.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.easylinux.security" && subject.isInGroup("wheel") && subject.active && subject.local) {
+        return polkit.Result.YES;
+    }
+});

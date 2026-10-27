@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>easyLinux</vendor>
+  <action id="org.easylinux.security">
+    <description>Check and improve system security</description>
+    <description xml:lang="de">Sicherheit prüfen und verbessern</description>
+    <message>Authentication is required to check the security status</message>
+    <message xml:lang="de">Zum Prüfen der Sicherheit wird Ihr Passwort benötigt</message>
+    <icon_name>security-high</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/opt/easylinux/apps/security/helper.py</annotate>
+  </action>
+</policyconfig>
