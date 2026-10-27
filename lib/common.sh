@@ -47,6 +47,20 @@ restore_configs() {
     done < "$EASYLINUX_BACKUP/files.txt"
 }
 
+# Datei, die easyLinux im Benutzerverzeichnis neu anlegt (außerhalb von ~/.config) –
+# wird beim Deinstallieren gelöscht.
+user_put() {
+    local src="$1" dest="$2"
+    mkdir -p "$(dirname "$dest")" "$EASYLINUX_STATE"
+    grep -qxF "$dest" "$EASYLINUX_STATE/created.txt" 2>/dev/null || echo "$dest" >> "$EASYLINUX_STATE/created.txt"
+    cp "$src" "$dest"
+}
+
+remove_user_files() {
+    [ -f "$EASYLINUX_STATE/created.txt" ] || return 0
+    xargs -r -d '\n' rm -f < "$EASYLINUX_STATE/created.txt"
+}
+
 plasma_running() { pgrep -u "$(id -u)" -x plasmashell >/dev/null; }
 
 plasma_stop() {
@@ -72,4 +86,89 @@ plasma_start() {
 # Führt ein Plasma-Skript (JavaScript-API der Arbeitsfläche) in der laufenden Sitzung aus.
 plasma_eval() {
     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$1")"
+}
+
+# ---------------------------------------------------------------------------
+# Systemweite Änderungen (brauchen root). Alles wird in $EASYLINUX_SYS protokolliert,
+# damit uninstall.sh es vollständig zurücknehmen kann.
+EASYLINUX_SYS=/var/lib/easylinux
+EASYLINUX_OPT=/opt/easylinux
+
+root() {
+    if [ "$(id -u)" -eq 0 ]; then "$@"
+    elif [ -n "${SUDO_ASKPASS:-}" ]; then sudo -A "$@"
+    else sudo "$@"; fi
+}
+
+_sys_log() { root mkdir -p "$EASYLINUX_SYS"; echo "$2" | root tee -a "$EASYLINUX_SYS/$1" >/dev/null; }
+
+# Datei systemweit ablegen. Eine vorhandene Datei wird vorher gesichert.
+sys_put() {
+    local src="$1" dest="$2" mode="${3:-644}"
+    root mkdir -p "$EASYLINUX_SYS/backup"
+    if ! root grep -qxF "$dest" "$EASYLINUX_SYS/files.txt" 2>/dev/null; then
+        if [ -e "$dest" ]; then
+            root mkdir -p "$(dirname "$EASYLINUX_SYS/backup$dest")"
+            root cp -a "$dest" "$EASYLINUX_SYS/backup$dest"
+        fi
+        _sys_log files.txt "$dest"
+    fi
+    root install -D -m "$mode" "$src" "$dest"
+}
+
+# Inhalt von stdin als Systemdatei ablegen.
+sys_write() {
+    local tmp; tmp="$(mktemp)"; cat > "$tmp"
+    sys_put "$tmp" "$1" "${2:-644}"; rm -f "$tmp"
+}
+
+# Pakete installieren; gemerkt werden nur die, die vorher fehlten.
+pkg_need() {
+    local p missing=()
+    for p in "$@"; do pacman -Qq "$p" >/dev/null 2>&1 || missing+=("$p"); done
+    [ ${#missing[@]} -eq 0 ] && return 0
+    info "Installiere: ${missing[*]}"
+    root pacman -S --needed --noconfirm "${missing[@]}"
+    root mkdir -p "$EASYLINUX_SYS"
+    for p in "${missing[@]}"; do _sys_log packages.txt "$p"; done
+}
+
+# systemd-Einheit aktivieren und fürs Deinstallieren merken.
+unit_enable() {
+    root systemctl daemon-reload
+    root systemctl enable --now "$1"
+    _sys_log units.txt "$1"
+}
+
+user_unit_enable() {
+    systemctl --user daemon-reload
+    systemctl --user enable --now "$1"
+    echo "$1" >> "$EASYLINUX_STATE/user-units.txt"
+}
+
+restore_system() {
+    [ -d "$EASYLINUX_SYS" ] || return 0
+    local f
+    if [ -f "$EASYLINUX_SYS/units.txt" ]; then
+        while IFS= read -r f; do root systemctl disable --now "$f" 2>/dev/null || true; done < "$EASYLINUX_SYS/units.txt"
+    fi
+    if [ -f "$EASYLINUX_SYS/files.txt" ]; then
+        while IFS= read -r f; do
+            if [ -e "$EASYLINUX_SYS/backup$f" ]; then root cp -a "$EASYLINUX_SYS/backup$f" "$f"
+            else root rm -f "$f"; fi
+        done < "$EASYLINUX_SYS/files.txt"
+    fi
+    root rm -rf "$EASYLINUX_OPT"
+    root systemctl daemon-reload
+    if [ -s "$EASYLINUX_SYS/packages.txt" ]; then
+        # shellcheck disable=SC2046
+        root pacman -Rns --noconfirm $(cat "$EASYLINUX_SYS/packages.txt") || warn "Einige Pakete konnten nicht entfernt werden."
+    fi
+    root rm -rf "$EASYLINUX_SYS"
+}
+
+restore_user_units() {
+    [ -f "$EASYLINUX_STATE/user-units.txt" ] || return 0
+    local u
+    while IFS= read -r u; do systemctl --user disable --now "$u" 2>/dev/null || true; done < "$EASYLINUX_STATE/user-units.txt"
 }

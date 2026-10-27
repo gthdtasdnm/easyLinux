@@ -2,14 +2,16 @@
 # easyLinux installieren. Läuft ohne Rückfragen; die vorherigen Einstellungen werden
 # gesichert und können mit ./uninstall.sh wiederhergestellt werden.
 set -euo pipefail
-root="$(cd "$(dirname "$0")" && pwd)"
-. "$root/lib/common.sh"
+repo="$(cd "$(dirname "$0")" && pwd)"
+. "$repo/lib/common.sh"
 
 require_user_session
 mkdir -p "$EASYLINUX_STATE"
+info "Für systemweite Teile wird einmal das Passwort benötigt."
+root true
 
 info "easyLinux wird eingerichtet …"
-for module in "$root"/modules/*/apply.sh; do
+for module in "$repo"/modules/*/apply.sh; do
     bash "$module" || warn "Schritt fehlgeschlagen: $(basename "$(dirname "$module")")"
 done
 

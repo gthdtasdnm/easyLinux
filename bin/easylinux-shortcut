@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Globale KDE-Tastenkürzel über die D-Bus-Schnittstelle von kglobalaccel setzen.
+#   easylinux-shortcut launch <datei.desktop> <Name> <Taste…>   App-Start auf Taste legen
+#   easylinux-shortcut set <Komponente> <Aktion> <Taste…>        Taste einer vorhandenen Aktion ändern
+#   easylinux-shortcut clear <Komponente> <Aktion>               Taste entfernen
+# Tasten als Text, z. B. Ctrl+Shift+Esc oder Ctrl+Alt+Del.
+set -euo pipefail
+
+keycode() {
+    local code=0 part
+    IFS=+ read -ra parts <<< "$1"
+    for part in "${parts[@]}"; do
+        case "$part" in
+            Ctrl) code=$((code | 0x04000000)) ;;
+            Shift) code=$((code | 0x02000000)) ;;
+            Alt) code=$((code | 0x08000000)) ;;
+            Meta) code=$((code | 0x10000000)) ;;
+            Esc) code=$((code | 0x01000000)) ;;
+            Del) code=$((code | 0x01000007)) ;;
+            *) echo "Unbekannte Taste: $part" >&2; exit 1 ;;
+        esac
+    done
+    echo "$code"
+}
+
+call() { busctl --user call org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel "$@"; }
+
+keys_args() {
+    local k args=("$#")
+    for k in "$@"; do args+=(1 "$(keycode "$k")"); done
+    echo "${args[@]}"
+}
+
+case "$1" in
+    launch)
+        id=(4 "$2" _launch "$3" "$3")
+        call doRegister as "${id[@]}"
+        # shellcheck disable=SC2046
+        call setForeignShortcutKeys "asa(ai)" "${id[@]}" $(keys_args "${@:4}")
+        ;;
+    set)
+        # shellcheck disable=SC2046
+        call setForeignShortcutKeys "asa(ai)" 4 "$2" "$3" "$2" "$3" $(keys_args "${@:4}")
+        ;;
+    clear)
+        call setForeignShortcutKeys "asa(ai)" 4 "$2" "$3" "$2" "$3" 0
+        ;;
+    *) echo "Aufruf: $0 launch|set|clear …" >&2; exit 1 ;;
+esac

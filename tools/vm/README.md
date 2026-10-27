@@ -10,7 +10,7 @@ Steuern die Test-VM (GNOME Boxes / libvirt-Session, Standard-Name `boxes-unknown
 | `vm key KEY_…` / `vm type TEXT` | Tastatur über `virsh send-key` (`VMKB=de` oder `us`) |
 | `vm mouse-start`, `vm click X Y`, `vm dbl X Y` | Maus über ein uinput-Gerät im Gast (QEMU-Mausereignisse kommen im Gast nicht an) |
 
-Snapshots: `virsh -c qemu:///session snapshot-revert boxes-unknown-2 frisch-installiert --running`
+Snapshots: `virsh -c qemu:///session snapshot-revert boxes-unknown-2 frisch-aus`
 
 ## So wurde die VM eingerichtet
 - Boxes erkannte CachyOS nicht und wählte rtl8139 + IDE (Netz ~100 B/s). Umgestellt auf virtio-blk und

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Einfache Render-Schleife: zuverlässiger auf VMs und schwacher Grafik
+export QSG_RENDER_LOOP="${QSG_RENDER_LOOP:-basic}"
+exec python3 /opt/easylinux/apps/taskmanager/main.py "$@"

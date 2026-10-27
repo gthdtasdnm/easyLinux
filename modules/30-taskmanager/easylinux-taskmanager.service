@@ -1,0 +1,16 @@
+[Unit]
+Description=easyLinux Taskmanager und Strg+Alt+Entf-Bildschirm (vorgeladen)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/opt/easylinux/bin/easylinux-taskmanager --background
+Restart=always
+RestartSec=2
+# Auch bei hoher Last bevorzugt Rechenzeit und Speicher bekommen
+CPUWeight=1000
+IOWeight=1000
+MemoryMin=96M
+
+[Install]
+WantedBy=graphical-session.target

@@ -43,7 +43,7 @@ tasks.writeConfig("launchers", [
     "applications:systemsettings.desktop",
     "preferred://filemanager",
     "preferred://browser",
-    "applications:org.kde.plasma-systemmonitor.desktop"
+    "applications:easylinux-taskmanager.desktop"
 ]);
 
 panel.addWidget("org.kde.plasma.marginsseparator");

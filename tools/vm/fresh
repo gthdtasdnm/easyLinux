@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# VM auf "frisch-aus" (frisch installiert, ausgeschaltet) zurücksetzen, starten und anmelden.
+T="$(cd "$(dirname "$0")" && pwd)"
+D="${EASYLINUX_VM:-boxes-unknown-2}"
+virsh -c qemu:///session destroy "$D" >/dev/null 2>&1
+virsh -c qemu:///session snapshot-revert "$D" frisch-aus >/dev/null || exit 1
+virsh -c qemu:///session start "$D" >/dev/null || exit 1
+"$T/login"

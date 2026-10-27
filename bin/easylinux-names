@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Einheitliche App-Namen: legt angepasste Kopien der .desktop-Dateien in
+/usr/local/share/applications an (haben Vorrang vor /usr/share/applications).
+
+  easylinux-names            anwenden (auch nach jedem Paket-Update per pacman-Hook)
+  easylinux-names --remove   alle angelegten Dateien wieder entfernen
+"""
+import os
+import re
+import sys
+
+CONF = "/opt/easylinux/data/names.conf"
+SRC = "/usr/share/applications"
+DEST = "/usr/local/share/applications"
+LIST = "/var/lib/easylinux/names-files.txt"
+MARK = "X-EasyLinux-Renamed=true"
+
+
+def table():
+    with open(CONF, encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip() and not line.startswith("#"):
+                parts = [p.strip() for p in line.split("|")]
+                yield parts[0], parts[1], parts[2] if len(parts) > 2 else ""
+
+
+def rewrite(text, name, comment):
+    out, section = [], None
+    for line in text.splitlines():
+        if line.startswith("["):
+            if section == "[Desktop Entry]":
+                out += _extra(name, comment)
+            section = line.strip()
+        elif section == "[Desktop Entry]":
+            key = re.match(r"([A-Za-z-]+)(\[[^]]*\])?=", line)
+            key = key.group(1) if key else ""
+            # Ausblenden: nur NoDisplay ersetzen. Umbenennen: Namen und Beschreibungen ersetzen.
+            if (name == "-" and key == "NoDisplay") or (name != "-" and key in ("Name", "GenericName", "Comment")):
+                continue
+        out.append(line)
+    if section == "[Desktop Entry]":
+        out += _extra(name, comment)
+    return "\n".join(out) + "\n"
+
+
+def _extra(name, comment):
+    if name == "-":
+        return ["NoDisplay=true", MARK]
+    lines = [f"Name={name}", f"Name[de]={name}"]
+    if comment:
+        lines += [f"Comment={comment}", f"Comment[de]={comment}", f"GenericName[de]={comment}"]
+    return lines + [MARK]
+
+
+def remove():
+    if os.path.exists(LIST):
+        for path in open(LIST).read().split():
+            if os.path.exists(path) and MARK in open(path, encoding="utf-8", errors="replace").read():
+                os.remove(path)
+        os.remove(LIST)
+
+
+def apply():
+    os.makedirs(DEST, exist_ok=True)
+    os.makedirs(os.path.dirname(LIST), exist_ok=True)
+    written = []
+    for did, name, comment in table():
+        src, dest = os.path.join(SRC, did + ".desktop"), os.path.join(DEST, did + ".desktop")
+        if not os.path.exists(src):
+            continue
+        # Eigene Dateien des Admins nie überschreiben
+        if os.path.exists(dest) and MARK not in open(dest, encoding="utf-8", errors="replace").read():
+            continue
+        with open(src, encoding="utf-8", errors="replace") as fh:
+            text = rewrite(fh.read(), name, comment)
+        with open(dest, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        written.append(dest)
+    # Dateien zu deinstallierten Apps aufräumen
+    old = open(LIST).read().split() if os.path.exists(LIST) else []
+    for path in set(old) - set(written):
+        if os.path.exists(path):
+            os.remove(path)
+    with open(LIST, "w") as fh:
+        fh.write("\n".join(written) + "\n")
+
+
+if __name__ == "__main__":
+    remove() if "--remove" in sys.argv else apply()

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Sicherheitsoptionen
+Comment=Sperren, Abmelden, Taskmanager, Neu starten (Strg+Alt+Entf)
+Exec=/opt/easylinux/bin/easylinux-taskmanager --session-menu
+Icon=system-lock-screen
+NoDisplay=true

@@ -1,3 +1,5 @@
 #!/bin/sh
-# Befehl in der grafischen Sitzung des Testbenutzers ausführen (wie aus einem Terminal dort)
-printf '%s\n' "export XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus WAYLAND_DISPLAY=wayland-0 XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland" "$*" | "$(dirname "$0")/vssh" bash -s
+# Befehl in der grafischen Sitzung des Testbenutzers ausführen (Umgebung wird von plasmashell übernommen)
+printf '%s\n' 'export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus SUDO_ASKPASS=$HOME/.askpass' \
+  'p=$(pgrep -u "$(id -u)" -x plasmashell | head -1); [ -n "$p" ] && eval "$(tr "\0" "\n" < /proc/$p/environ | grep -E "^(WAYLAND_DISPLAY|DISPLAY|XDG_CURRENT_DESKTOP|XDG_SESSION_TYPE|LANG|QT_[A-Z_]+)=" | sed "s/^/export /; s/=\(.*\)/=\"\1\"/")"' \
+  "$*" | "$(dirname "$0")/vssh" bash -s

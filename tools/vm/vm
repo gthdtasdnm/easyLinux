@@ -6,9 +6,9 @@ D=${EASYLINUX_VM:-boxes-unknown-2}; S=${XDG_RUNTIME_DIR:-/tmp}/easylinux-vm; mkd
 v(){ virsh -c qemu:///session "$@"; }
 case "$1" in
   shot) v screenshot $D $S/vm.ppm >/dev/null; magick $S/vm.ppm $S/vm.png; echo $S/vm.png;;
-  mouse-start)
+  mouse-start) v screenshot $D $S/vm.ppm >/dev/null; magick $S/vm.ppm $S/vm.png
     "$(dirname "$0")/vssh" 'cat > /tmp/vmouse.py' < "$(dirname "$0")/vmouse.py"
-    "$(dirname "$0")/vssh" "echo ${VMPASS:-testpass1234} | sudo -S sh -c 'pkill -f ^python3./tmp/vmouse; nohup python3 /tmp/vmouse.py 1024 768 >/dev/null 2>&1 </dev/null &'" 2>/dev/null;;
+    "$(dirname "$0")/vssh" "echo ${VMPASS:-testpass1234} | sudo -S sh -c 'pkill -f ^python3./tmp/vmouse; nohup python3 /tmp/vmouse.py $(magick identify -format '%w %h' $S/vm.png) >/dev/null 2>&1 </dev/null &'" 2>/dev/null;;
   click) "$(dirname "$0")/vssh" "echo click $2 $3 ${4:-left} > /tmp/vmouse";;
   dbl) "$(dirname "$0")/vssh" "echo dbl $2 $3 > /tmp/vmouse";;
   key) shift; v send-key $D "$@" >/dev/null;;

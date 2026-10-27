@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Taskmanager
+GenericName=Laufende Apps anzeigen und beenden
+Comment=Zeigt, welche Apps laufen, wie viel sie verbrauchen, und beendet hängende Apps
+Exec=/opt/easylinux/bin/easylinux-taskmanager
+Icon=utilities-system-monitor
+Categories=System;Monitor;
+Keywords=Task;Prozess;Hängt;Beenden;Absturz;CPU;Speicher;RAM;
