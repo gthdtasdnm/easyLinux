@@ -32,6 +32,7 @@ apps/                       Programme (Python + Qt/QML mit Kirigami, passend zu 
     kcmhost/                kleine C++-Brücke: KDE-Einstellungsseiten im selben Fenster (wird beim Installieren gebaut)
   security/                 Sicherheit (wie Windows-Sicherheit) + root-Helfer (pkexec)
   openfile/                 Doppelklick-Installation
+  taskbarmenu/              Rechtsklickmenü der Leiste (C++-Plugin für Plasma, wird beim Installieren gebaut)
 bin/                        Startskripte, easylinux-names, easylinux-shortcut
 data/names.conf             Tabelle der einheitlichen App-Namen
 modules/NN-name/            apply.sh (+ revert.sh) je Funktion, laufen in Nummern-Reihenfolge
@@ -45,7 +46,7 @@ vollständig zurück. Getestet: Installation → Neustart → Deinstallation; Pa
 
 | # | Funktion | Stand |
 |---|---|---|
-| 1 | Startmenü & Taskleiste | ✅ schwebende Leiste, angeheftet: Einstellungen, Dateien, Browser, Taskmanager. Offen: Startmenü-Favoriten (verwaltet Plasma selbst), mehrere Bildschirme |
+| 1 | Startmenü & Taskleiste | ✅ schwebende Leiste, angeheftet: Einstellungen, Dateien, Browser, Taskmanager. Rechtsklick wie Windows: Startknopf → Win+X-Menü (Terminal, Terminal (Administrator) mit Passwortabfrage, Task-Manager, Einstellungen, Herunterfahren …), Taskleiste → Task-Manager, Taskleisteneinstellungen (eigenes Plasma-Plugin, nach Plasma-Updates automatisch neu gebaut). Offen: Startmenü-Favoriten (verwaltet Plasma selbst), mehrere Bildschirme |
 | 2 | Taskmanager | ✅ wie Windows 11 mit Tabs: **Prozesse** (Apps statt Prozesse über systemd-Gruppen, CPU/RAM/Datenträger je App, sortierbar, Effizienzmodus, „Task beenden“ beendet die ganze App), **Leistung** (Prozessor, Speicher, jedes Laufwerk, Netzwerk, AMD-GPU mit Verlauf), **Autostart-Apps** (Schalter, Original bleibt unverändert), **Details** (alle Prozesse, Priorität, Beenden erzwingen), **Dienste** (Starten/Beenden mit Passwort). Strg+Umschalt+Esc, vorgeladen. Offen: Netzwerk je App |
 | 3 | Strg+Alt+Entf | ✅ Windows-Bildschirm (Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren) · ✅ Speicher-Wächter (oomd greift nach 10 s ein, Plasma meldet die App) · ✅ Notfall-Dienst: fragt KWin per Wayland direkt, ob die Oberfläche noch antwortet – nur dann Textmenü auf Konsole 9; auf Sperr- und Anmeldebildschirm passiert nichts |
 | 4 | Einheitliche Namen | ✅ Dateien, Terminal, Editor, Bilder, Rechner, Bildschirmfoto, Medienplayer (Haruna) …; Entwickler-/Doppel-Apps ausgeblendet; pacman-Hook hält es nach Updates aktuell. Offen: eigener Medienplayer |

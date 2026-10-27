@@ -1,0 +1,18 @@
+#!/bin/sh
+# Baut die C++-Teile von easyLinux nach Qt-/Plasma-Updates neu (aufgerufen vom pacman-Hook).
+# Schlägt ein Bau fehl, wird der Teil entfernt – dann gilt wieder das Plasma-Standardverhalten.
+OPT=/opt/easylinux
+PLUGIN=/usr/lib/qt6/plugins/plasma/containmentactions/org.easylinux.taskbarmenu.so
+
+if ! sh "$OPT/apps/settings/kcmhost/build.sh" >/dev/null 2>&1; then
+    rm -f "$OPT/apps/settings/kcmhost/libkcmhost.so"   # Einstellungsseiten öffnen dann eigene Fenster
+    echo "easyLinux: Einstellungen-Brücke konnte nicht neu gebaut werden"
+fi
+if [ -e "$PLUGIN" ]; then
+    if sh "$OPT/apps/taskbarmenu/build.sh" >/dev/null 2>&1; then
+        install -m 755 "$OPT/apps/taskbarmenu/org.easylinux.taskbarmenu.so" "$PLUGIN"
+    else
+        echo "easyLinux: Rechtsklickmenü konnte nicht neu gebaut werden (wirkt nach dem nächsten Anmelden wie vorher)"
+    fi
+fi
+exit 0

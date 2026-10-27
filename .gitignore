@@ -4,3 +4,5 @@ apps/settings/kcmhost/moc_kcmhost.cpp
 *.iso
 __pycache__/
 *.qcow2
+apps/taskbarmenu/org.easylinux.taskbarmenu.so
+apps/taskbarmenu/taskbarmenu.moc

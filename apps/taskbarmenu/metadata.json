@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Name": "easyLinux-Rechtsklickmenü",
+        "Description": "Rechtsklick wie bei Windows: Startknopf mit Win+X-Menü, Taskleiste mit Task-Manager",
+        "Icon": "preferences-desktop-mouse"
+    },
+    "X-Plasma-HasConfigurationInterface": false
+}

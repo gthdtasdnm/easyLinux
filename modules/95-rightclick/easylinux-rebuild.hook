@@ -1,0 +1,15 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = qt6-base
+Target = qt6-declarative
+Target = libplasma
+Target = plasma-workspace
+Target = kcmutils
+Target = kio
+
+[Action]
+Description = easyLinux: Einstellungen-Brücke und Rechtsklickmenü an neue Plasma-Version anpassen
+When = PostTransaction
+Exec = /opt/easylinux/bin/easylinux-rebuild
