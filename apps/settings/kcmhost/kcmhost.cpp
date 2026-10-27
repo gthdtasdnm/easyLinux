@@ -47,11 +47,12 @@ QObject *KcmHost::load(const QString &name)
     }
     KQuickConfigModule *module = result.plugin;
     QQmlEngine::setObjectOwnership(module, QQmlEngine::CppOwnership);
-    module->load();
+    // Erst die Oberfläche, dann load(): Manche Module (Schriftarten, Region) brauchen in load() schon die Engine
     if (!module->mainUi()) {
         delete module;
         return nullptr;
     }
+    module->load();
     return module;
 }
 

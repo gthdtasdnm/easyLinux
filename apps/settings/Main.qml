@@ -47,6 +47,8 @@ Kirigami.ApplicationWindow {
     function openEntry(e) {
         if (e.target === "page:installed") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "installed"; root.entry = e; backend.loadApps() })
+        } else if (e.target === "page:display") {
+            leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "display"; root.entry = e; display.refresh() })
         } else if (e.target.startsWith("kcm_") && root.kcm) {
             leaveKcm(() => {
                 if (root.kcm.open(e.target)) {
@@ -76,6 +78,8 @@ Kirigami.ApplicationWindow {
             searchField.text = ""
         else if (root.view === "kcm" && root.kcm && root.kcm.module && root.kcm.module.depth > 1)
             root.kcm.module.pop()
+        else if (root.view === "kcm" && root.entry && root.entry.target === "kcm_kscreen")
+            openTarget("page:display")  // von „Erweiterte Anzeigeeinstellungen“ zurück zur Bildschirm-Seite
         else if (root.view !== "category")
             showCategory(root.category)
     }
@@ -273,6 +277,18 @@ Kirigami.ApplicationWindow {
                     source: typeof kcmHostAvailable !== "undefined" && kcmHostAvailable ? "KcmView.qml" : ""
                 }
 
+                // ---- Bildschirm (eigene Seite wie bei Windows)
+                Loader {
+                    active: !root.searching && root.view === "display"
+                    visible: active
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    sourceComponent: DisplayPage {
+                        onAdvanced: root.openEntry({ title: "Erweiterte Anzeigeeinstellungen", subtitle: "", icon: "preferences-desktop-display",
+                                                     target: "kcm_kscreen", categoryKey: "system", category: "System", external: false })
+                    }
+                }
+
                 // ---- Installierte Apps
                 ColumnLayout {
                     visible: !root.searching && root.view === "installed"
@@ -387,7 +403,7 @@ Kirigami.ApplicationWindow {
                 }
             }
             Kirigami.Icon {
-                source: modelData.target.startsWith("app:") || modelData.target.startsWith("action:") ? "external-link-symbolic" : "go-next-symbolic"
+                source: modelData.external ? "external-link-symbolic" : "go-next-symbolic"
                 Layout.preferredWidth: Kirigami.Units.iconSizes.small
                 Layout.preferredHeight: Layout.preferredWidth
                 opacity: 0.6

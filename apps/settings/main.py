@@ -23,11 +23,14 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from easylinux import desktop, single
+from display import Display
 from settings_entries import CATEGORIES, ENTRIES
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KCMHOST = os.path.join(HERE, "kcmhost", "libkcmhost.so")
 KCM_PLUGINS = "/usr/lib/qt6/plugins/plasma/kcms"
+KCM_EMBED_DIRS = ("systemsettings", ".", "kinfocenter")  # QML-Seiten wie in kcmhost.cpp – lassen sich einbetten
+KCMHOST_OK = os.path.exists(KCMHOST)
 # Ohne diese Pakete funktioniert die Oberfläche nicht – nie zum Deinstallieren anbieten
 PROTECTED = {"plasma-desktop", "plasma-workspace", "systemsettings", "kwin", "plasma-login-manager",
              "plasmalogin", "dolphin", "konsole", "kdialog", "pyside6", "cachyos-hello", "cachyos-settings"}
@@ -49,6 +52,14 @@ def available(target):
     if target.startswith("app:"):
         return desktop.find(target[4:]) is not None
     return True
+
+
+@lru_cache(maxsize=None)
+def opens_window(target):
+    """Öffnet der Eintrag ein eigenes Fenster? (Programme, Aktionen und alte QWidget-Seiten) – für das Pfeil-Symbol."""
+    if target.startswith("kcm_"):
+        return not (KCMHOST_OK and any(os.path.exists(f"{KCM_PLUGINS}/{d}/{target}.so") for d in KCM_EMBED_DIRS))
+    return target.startswith(("app:", "action:"))
 
 
 def user_info():
@@ -167,6 +178,8 @@ class Backend(QObject):
     @Slot(str, result="QVariantMap")
     def entryFor(self, target):
         """Eintrag zu einem Ziel (z. B. „kcm_kscreen“) – für Aufrufe von außen."""
+        if target == "kcm_kscreen":  # „Anzeige einrichten“ von KDE → unsere Bildschirm-Seite
+            target = "page:display"
         e = next((e for e in ENTRIES if e[4] == target and available(target)), None)
         return self._entry(e) if e else {}
 
@@ -215,7 +228,8 @@ class Backend(QObject):
     @staticmethod
     def _entry(e):
         cat = next(c[1] for c in CATEGORIES if c[0] == e[0])
-        return {"title": e[1], "subtitle": e[2], "icon": e[3], "target": e[4], "category": cat, "categoryKey": e[0]}
+        return {"title": e[1], "subtitle": e[2], "icon": e[3], "target": e[4], "category": cat, "categoryKey": e[0],
+                "external": opens_window(e[4])}
 
     @Slot(str)
     def open(self, target):
@@ -306,6 +320,9 @@ def main():
             print("kcmhost nicht geladen:", exc, file=sys.stderr)
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("backend", backend)
+    display = Display()
+    display.message.connect(backend.message)
+    engine.rootContext().setContextProperty("display", display)
     engine.rootContext().setContextProperty("kcmHostAvailable", host)
     engine.rootContext().setContextProperty("startPage", page)
     engine.load(os.path.join(HERE, "Main.qml"))

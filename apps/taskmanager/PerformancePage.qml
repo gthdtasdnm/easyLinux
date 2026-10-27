@@ -21,9 +21,18 @@ RowLayout {
             id: devList
             model: backend.devices
             clip: true
-            keyNavigationEnabled: true
             spacing: Kirigami.Units.smallSpacing
-            onCurrentIndexChanged: if (currentItem) page.selected = currentItem.key
+            // Die Liste wird jede Sekunde neu befüllt (setzt currentIndex auf 0) – deshalb folgt der Index
+            // der Auswahl und nicht umgekehrt; Pfeiltasten ändern die Auswahl selbst.
+            currentIndex: Math.max(0, backend.devices.findIndex(d => d.key === page.selected))
+            function step(delta) {
+                const devices = backend.devices
+                const i = Math.min(devices.length - 1, Math.max(0, devices.findIndex(d => d.key === page.selected) + delta))
+                if (devices[i])
+                    page.selected = devices[i].key
+            }
+            Keys.onUpPressed: step(-1)
+            Keys.onDownPressed: step(1)
             delegate: QQC2.ItemDelegate {
                 id: dev
                 required property var modelData
@@ -32,7 +41,7 @@ RowLayout {
                 width: ListView.view.width
                 highlighted: page.selected === modelData.key
                 focusPolicy: Qt.NoFocus
-                onClicked: { devList.currentIndex = index; page.selected = modelData.key }
+                onClicked: page.selected = modelData.key
                 contentItem: RowLayout {
                     spacing: Kirigami.Units.largeSpacing
                     Graph {

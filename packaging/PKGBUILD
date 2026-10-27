@@ -11,7 +11,7 @@ license=('unknown')
 depends=(
     python pyside6 kdialog pacman-contrib arch-audit flatpak fuse2 breeze-gtk xdg-desktop-portal-kde
     plasma-workspace kwin libplasma kcmutils kio kconfig kservice kdbusaddons kde-cli-tools qt6-base
-    qt6-declarative qt6-tools libnotify polkit systemd konsole dolphin
+    qt6-declarative qt6-tools libkscreen libnotify polkit systemd konsole dolphin
     # Zum Bauen der C++-Teile gegen die installierte Plasma-Version (siehe easylinux-rebuild)
     gcc pkgconf
 )

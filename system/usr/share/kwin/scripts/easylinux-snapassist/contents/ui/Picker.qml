@@ -103,7 +103,7 @@ PlasmaCore.Dialog {
             interval: 1
             onTriggered: { picker.x = picker.area.x; picker.y = picker.area.y; picker.requestActivate() }
         }
-        Timer { id: settle; interval: 500; onTriggered: picker.settling = false }
+        Timer { id: settle; interval: 800; onTriggered: picker.settling = false }
 
         Connections {
             target: Workspace
@@ -119,6 +119,8 @@ PlasmaCore.Dialog {
         }
 
         MouseArea { anchors.fill: parent; onClicked: picker.close() }  // Klick daneben = abbrechen
+        focus: true
+        Keys.onEscapePressed: picker.close()
 
         QQC2.Label {
             id: heading

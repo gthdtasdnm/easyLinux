@@ -25,7 +25,7 @@ CATEGORIES = [
 ENTRIES = [
     # ---------------- System (Reihenfolge wie Windows 11)
     ("system", "Bildschirm", "Mehrere Bildschirme anordnen, Auflösung, Skalierung, Helligkeit", "preferences-desktop-display",
-     "kcm_kscreen", "monitor display auflösung skalierung größe zoom text größer hz bildwiederholrate drehen "
+     "page:display", "monitor display auflösung skalierung größe zoom text größer hz bildwiederholrate drehen "
      "mehrere bildschirme zweiter monitor anordnen anordnung erweitern duplizieren spiegeln beamer projizieren hauptbildschirm"),
     ("system", "Nachtlicht", "Wärmere Farben am Abend, schont die Augen", "redshift-status-on",
      "kcm_nightlight", "bildschirm blaulicht nachtmodus augen abend farbtemperatur"),

@@ -31,7 +31,24 @@ Item {
         return false;
     }
 
+    // Gehört das Fenster in die Auswahl? Der Taskmanager wartet versteckt im Hintergrund – KWin führt ihn
+    // dann als minimiertes Fenster ohne Bild (das war das leere Feld).
+    function candidate(w, window) {
+        return w !== window && w.normalWindow && !w.deleted && w.managed !== false && !w.skipTaskbar
+            && w.caption !== pickerTitle && w.output === window.output && onDesktop(w)
+            && w.frameGeometry.width > 0 && w.frameGeometry.height > 0
+            && !(w.minimized && w.resourceClass === "easylinux-taskmanager");
+    }
+
     function tiled(window) {
+        try {
+            offer(window);
+        } catch (e) {
+            console.warn("easyLinux Snap Assist:", e);
+        }
+    }
+
+    function offer(window) {
         if (busy || !window.tile || window.minimized)
             return;
         const area = Workspace.clientArea(KWin.MaximizeArea, window);
@@ -46,14 +63,15 @@ Item {
         const stack = Workspace.stackingOrder;
         for (let i = stack.length - 1; i >= 0; i--) {  // zuletzt benutzte zuerst
             const w = stack[i];
-            if (w === window || !w.normalWindow || w.caption === pickerTitle || w.skipTaskbar || w.output !== window.output || !onDesktop(w))
+            if (!candidate(w, window))
                 continue;
-            // Freie Hälfte ist schon belegt → nichts anbieten
-            if (w.tile && !w.minimized) {
-                const t = w.tile.absoluteGeometry;
-                if (Math.abs(t.x - free.x) < 20 && Math.abs(t.width - free.width) < 20)
-                    return;
-            }
+            // Freie Hälfte ist schon belegt → nichts anbieten. Geprüft wird, wo das Fenster wirklich steht:
+            // die Kachel-Zuordnung bleibt z. B. nach dem Maximieren oder Verschieben manchmal hängen,
+            // dann erschien der Assistent nie wieder.
+            const f = w.frameGeometry;
+            if (w.tile && !w.minimized && Math.abs(f.x - free.x) < 20 && Math.abs(f.width - free.width) < 20
+                    && f.height > free.height * 0.9)
+                return;
             candidates.push(w);
         }
         if (candidates.length === 0)
@@ -65,13 +83,17 @@ Item {
 
     function pick(window, toLeft) {
         busy = true;
-        window.minimized = false;
-        Workspace.activeWindow = window;
-        if (toLeft)
-            Workspace.slotWindowQuickTileLeft();
-        else
-            Workspace.slotWindowQuickTileRight();
-        release.restart();
+        release.restart();  // zuerst – falls unten etwas schiefgeht, bleibt der Assistent nicht dauerhaft aus
+        try {
+            window.minimized = false;
+            Workspace.activeWindow = window;
+            if (toLeft)
+                Workspace.slotWindowQuickTileLeft();
+            else
+                Workspace.slotWindowQuickTileRight();
+        } catch (e) {
+            console.warn("easyLinux Snap Assist:", e);
+        }
     }
 
     Timer { id: release; interval: 600; onTriggered: root.busy = false }
@@ -81,6 +103,7 @@ Item {
     Connections {
         target: Workspace
         function onWindowAdded(window) { root.hook(window) }
+        function onWindowRemoved(window) { root.hooks = root.hooks.filter(h => h[0] !== window) }
     }
 
     Component.onDestruction: {
