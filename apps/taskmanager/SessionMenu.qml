@@ -99,6 +99,6 @@ Window {
         anchors.bottom: parent.bottom
         anchors.margins: Kirigami.Units.gridUnit * 2
         color: "#b0ffffff"
-        text: "Esc: zurück   ·   Reagiert gar nichts mehr? Strg+Alt+Entf noch einmal drücken öffnet die Notfall-Hilfe."
+        text: "Esc: zurück   ·   Bild hängt? Strg+Alt+Entf noch einmal drücken öffnet die Notfall-Hilfe."
     }
 }

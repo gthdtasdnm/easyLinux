@@ -3,13 +3,15 @@
 
 Liest die Tastaturen direkt (evdev) – unabhängig von KWin/Plasma. Bei Strg+Alt+Entf wartet er
 kurz, ob der Strg+Alt+Entf-Bildschirm der Sitzung erscheint (er schreibt eine Quittung nach
-/run/user/<uid>/easylinux-sessionmenu.ack). Bleibt die Quittung aus – oder wird die Kombination
-innerhalb weniger Sekunden zweimal gedrückt –, wechselt der Dienst auf eine Textkonsole und
-zeigt dort das Notfall-Menü (menu.py).
+/run/user/<uid>/easylinux-sessionmenu.ack, beim Schließen steht „closed“ darin) und ob KWin noch antwortet.
+Antwortet KWin nicht, bleibt die Quittung aus (außer bei gesperrtem Bildschirm, dort nimmt
+Plasma keine Tastenkürzel an) oder wird die Kombination bei offenem Strg+Alt+Entf-Bildschirm
+erneut gedrückt (das Bild hängt also), wechselt der Dienst auf eine Textkonsole und zeigt das Notfall-Menü (menu.py).
 """
 import glob
 import os
 import select
+import socket
 import struct
 import subprocess
 import sys
@@ -21,7 +23,7 @@ EV_KEY = 1
 CTRL, ALT, DEL = {29, 97}, {56, 100}, {111}
 MENU_VT = 9
 ACK_WAIT = 3.0       # so lange darf der Strg+Alt+Entf-Bildschirm brauchen
-DOUBLE_PRESS = 8.0   # zweimal innerhalb dieser Zeit → Notfall-Menü erzwingen
+PING_WAIT = 2.0      # so lange darf KWin für eine Antwort brauchen
 
 
 def log(msg):
@@ -53,7 +55,53 @@ def active_session():
                                                      "-p", "User", "-p", "VTNr").splitlines() if "=" in line)
     if info.get("Class") != "user" or info.get("Type") not in ("wayland", "x11"):
         return None
-    return int(info["User"]), int(info.get("VTNr") or 0)
+    return int(info["User"]), int(info.get("VTNr") or 0), sid
+
+
+def locked(sid):
+    out = subprocess.run(["loginctl", "show-session", sid, "-p", "LockedHint", "--value"],
+                         capture_output=True, text=True).stdout.strip()
+    return out == "yes"
+
+
+def compositor_alive(uid):
+    """Wayland-„sync“ an KWin schicken: ein hängender Compositor beantwortet ihn nicht."""
+    sockets = sorted(p for p in glob.glob(f"/run/user/{uid}/wayland-*") if not p.endswith(".lock"))
+    for path in sockets:
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                s.settimeout(PING_WAIT)
+                s.connect(path)
+                # wl_display(1).sync(new_id 2): Objekt-ID, Länge<<16 | Opcode 0, neue ID
+                s.sendall(struct.pack("=III", 1, 12 << 16, 2))
+                buf, deadline = b"", time.monotonic() + PING_WAIT
+                while time.monotonic() < deadline:
+                    chunk = s.recv(4096)
+                    if not chunk:
+                        return False
+                    buf += chunk
+                    while len(buf) >= 8:
+                        obj, size_op = struct.unpack_from("=II", buf)
+                        if obj == 2:  # wl_callback.done
+                            return True
+                        buf = buf[max(size_op >> 16, 8):]
+                return False
+        except (ConnectionRefusedError, FileNotFoundError):
+            continue  # verwaister Socket einer früheren Sitzung
+        except socket.timeout:
+            return False
+        except OSError:
+            return True  # im Zweifel nicht eingreifen
+    return True  # kein Wayland – nichts zu prüfen
+
+
+def menu_open(uid):
+    """Ist der Strg+Alt+Entf-Bildschirm gerade offen? (Quittung enthält dann die PID)"""
+    try:
+        pid = open(f"/run/user/{uid}/easylinux-sessionmenu.ack").read().strip()
+    except OSError:
+        return False
+    return pid.isdigit() and os.path.exists(f"/proc/{pid}")
 
 
 def acked_since(uid, t):
@@ -75,7 +123,6 @@ def show_menu(uid, vt):
 def main():
     fds, last_scan = {}, 0
     held = set()
-    last_press = 0.0
     while True:
         if time.monotonic() - last_scan > 5:  # neue Tastaturen (USB) erkennen
             for path in keyboards():
@@ -106,19 +153,23 @@ def main():
                 held.add(code)
                 if code in DEL and held & CTRL and held & ALT:
                     now = time.time()
-                    double = now - last_press < DOUBLE_PRESS
-                    last_press = now
                     session = active_session()
                     if not session:
-                        continue
-                    uid, vt = session
-                    if not double:
+                        continue  # Anmeldebildschirm o. Ä.
+                    uid, vt, sid = session
+                    if locked(sid):
+                        # Sperrbildschirm nimmt keine Tastenkürzel an – nur eingreifen, wenn KWin hängt
+                        if compositor_alive(uid):
+                            continue
+                        log("KWin antwortet nicht (gesperrt)")
+                    elif not menu_open(uid):  # erneut gedrückt bei offenem Menü → Bild hängt
                         time.sleep(ACK_WAIT)
-                        if acked_since(uid, now):
+                        if not compositor_alive(uid):
+                            log("KWin antwortet nicht")
+                        elif acked_since(uid, now):
                             continue  # Oberfläche hat reagiert
                     held.clear()
                     show_menu(uid, vt)
-                    last_press = 0.0
                     # Tasten, die während des Menüs gedrückt wurden, verwerfen
                     for f in fds:
                         try:

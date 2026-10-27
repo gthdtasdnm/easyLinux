@@ -21,7 +21,9 @@ ACK = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "easylinux-session
 
 SESSION_ACTIONS = {
     "lock": ["loginctl", "lock-session"],
-    "switch": ["qdbus6", "org.kde.ksmserver", "/KSMServer", "org.kde.KSMServerInterface.openSwitchUserDialog"],
+    # Wie Plasma selbst: erst sperren, dann zum Anmeldebildschirm wechseln
+    "switch": ["sh", "-c", "loginctl lock-session && sleep 1 && qdbus6 --system org.freedesktop.DisplayManager "
+               "/org/freedesktop/DisplayManager/Seat0 org.freedesktop.DisplayManager.Seat.SwitchToGreeter"],
     "logout": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logout"],
     "reboot": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logoutAndReboot"],
     "shutdown": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logoutAndShutdown"],
@@ -167,7 +169,14 @@ def main():
         else:
             show()
 
+    def on_menu_visible(visible):
+        # Menü zu → vermerken; ein erneutes Strg+Alt+Entf gilt dann nicht als „zweimal gedrückt“
+        if not visible:
+            with open(ACK, "w") as fh:
+                fh.write("closed")
+
     menu.actionChosen.connect(on_action)
+    menu.visibleChanged.connect(on_menu_visible)
     server = single.listen(NAME, on_message)  # noqa: F841 – muss am Leben bleiben
     if not background:
         on_message(request.decode())
