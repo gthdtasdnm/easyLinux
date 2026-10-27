@@ -56,7 +56,7 @@ vollständig zurück. Getestet: Installation → Neustart → Deinstallation; Pa
 | 8 | Doppelklick-Installation | ✅ .AppImage (→ ~/Programme + Startmenü + Symbol), .flatpakref, .pkg.tar.zst, .deb/.rpm → Alternative anbieten; mit eingerichtetem Virenschutz wird vorher geprüft |
 | + | Sicherheit | ✅ wie Windows-Sicherheit: Ampel für Virenschutz, Firewall, Updates/Sicherheitslücken, Sicherungspunkte, Bildschirmsperre. Virenschutz (ClamAV) per Klick, prüft auf Knopfdruck und vor Installationen – kein Dauerscanner. Quarantäne, Löschen, Zulassen |
 | 9 | Benachrichtigungen | ✅ 6 Sekunden, Verlauf. Offen: Apps, die „dauerhaft“ erzwingen |
-| 10 | Snap Assist | ⏳ offen |
+| 10 | Snap Assist | ✅ KWin-Skript: Fenster an eine Bildschirmhälfte andocken (Ziehen an den Rand oder Meta+←/→) → in der freien Hälfte erscheinen die übrigen Fenster als Vorschau, ein Klick dockt das gewählte daneben an. Abbruch: Klick daneben oder anderes Fenster wählen. Nur per Maus – KWin gibt Skript-Fenstern keinen Tastaturfokus. Offen: Layout-Menü am Maximieren-Knopf (Windows 11) |
 
 ---
 
@@ -183,5 +183,6 @@ Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später 
 - [x] Einheitliche App-Namen, Taskmanager, Strg+Alt+Entf, Notfall-Dienst, Speicher-Wächter, Update-Manager, Doppelklick-Installation, Einstellungen
 - [ ] Auf dem eigenen PC ausprobieren (vorher Btrfs-Snapshot)
 - [x] Taskmanager mit Tabs, Sicherheit, Einstellungen in einem Fenster, Strg+Alt+Entf-Fehler bei Sperre/Benutzerwechsel
-- [ ] Startmenü-Favoriten, mehrere Bildschirme, Snap Assist, eigener Medienplayer, Laufwerks-Seite
+- [x] Rechtsklick wie Windows (Startknopf, Taskleiste), Snap Assist
+- [ ] Startmenü-Favoriten, mehrere Bildschirme, eigener Medienplayer, Laufwerks-Seite
 - [ ] Später: als Arch-/AUR-Paket
