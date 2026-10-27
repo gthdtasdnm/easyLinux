@@ -1,3 +1,6 @@
-*.iso
-*.qcow2
+apps/settings/kcmhost/libkcmhost.so
+apps/settings/kcmhost/moc_kcmhost.cpp
 *.img
+*.iso
+__pycache__/
+*.qcow2

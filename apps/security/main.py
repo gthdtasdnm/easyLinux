@@ -228,7 +228,7 @@ class Backend(QObject):
             if entry:
                 QProcess.startDetached("kioclient", ["exec", entry.path])
         elif target.startswith("kcm:"):
-            QProcess.startDetached("kcmshell6", [target[4:]])
+            QProcess.startDetached("/opt/easylinux/bin/easylinux-settings", [target[4:]])
         elif target == "lock-on":
             subprocess.run(["kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Daemon", "--key", "Autolock", "true"])
             self.message.emit("Die Bildschirmsperre ist eingeschaltet.", True)

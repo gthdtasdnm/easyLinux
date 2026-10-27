@@ -28,7 +28,9 @@ apps/                       Programme (Python + Qt/QML mit Kirigami, passend zu 
   taskmanager/              Taskmanager + Strg+Alt+Entf-Bildschirm (ein vorgeladener Prozess)
   emergency/                Notfall-Dienst (root) + Textmenü auf Konsole 9
   updater/                  Update-Manager + root-Helfer (pkexec)
-  settings/                 Einstellungen mit Windows-Struktur
+  settings/                 Einstellungen wie Windows 11 (ein Fenster)
+    kcmhost/                kleine C++-Brücke: KDE-Einstellungsseiten im selben Fenster (wird beim Installieren gebaut)
+  security/                 Sicherheit (wie Windows-Sicherheit) + root-Helfer (pkexec)
   openfile/                 Doppelklick-Installation
 bin/                        Startskripte, easylinux-names, easylinux-shortcut
 data/names.conf             Tabelle der einheitlichen App-Namen
@@ -44,13 +46,14 @@ vollständig zurück. Getestet: Installation → Neustart → Deinstallation; Pa
 | # | Funktion | Stand |
 |---|---|---|
 | 1 | Startmenü & Taskleiste | ✅ schwebende Leiste, angeheftet: Einstellungen, Dateien, Browser, Taskmanager. Offen: Startmenü-Favoriten (verwaltet Plasma selbst), mehrere Bildschirme |
-| 2 | Taskmanager | ✅ Strg+Umschalt+Esc, Apps statt Prozesse (über systemd-Gruppen), CPU/RAM mit Verlauf, „Task beenden“ beendet die ganze App, vorgeladen mit hoher Priorität, Tastaturbedienung |
-| 3 | Strg+Alt+Entf | ✅ Windows-Bildschirm (Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren) · ✅ Speicher-Wächter (oomd greift nach 10 s ein, Plasma meldet die App) · ✅ Notfall-Dienst: bei eingefrorener Oberfläche Textmenü auf Konsole 9 – getestet mit eingefrorenem KWin |
+| 2 | Taskmanager | ✅ wie Windows 11 mit Tabs: **Prozesse** (Apps statt Prozesse über systemd-Gruppen, CPU/RAM/Datenträger je App, sortierbar, Effizienzmodus, „Task beenden“ beendet die ganze App), **Leistung** (Prozessor, Speicher, jedes Laufwerk, Netzwerk, AMD-GPU mit Verlauf), **Autostart-Apps** (Schalter, Original bleibt unverändert), **Details** (alle Prozesse, Priorität, Beenden erzwingen), **Dienste** (Starten/Beenden mit Passwort). Strg+Umschalt+Esc, vorgeladen. Offen: Netzwerk je App |
+| 3 | Strg+Alt+Entf | ✅ Windows-Bildschirm (Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren) · ✅ Speicher-Wächter (oomd greift nach 10 s ein, Plasma meldet die App) · ✅ Notfall-Dienst: fragt KWin per Wayland direkt, ob die Oberfläche noch antwortet – nur dann Textmenü auf Konsole 9; auf Sperr- und Anmeldebildschirm passiert nichts |
 | 4 | Einheitliche Namen | ✅ Dateien, Terminal, Editor, Bilder, Rechner, Bildschirmfoto, Medienplayer (Haruna) …; Entwickler-/Doppel-Apps ausgeblendet; pacman-Hook hält es nach Updates aktuell. Offen: eigener Medienplayer |
 | 5 | Design | ✅ Flatpak-Apps übernehmen Farben/Schrift; GTK nutzt bereits Breeze. Offen: Akzentfarbe vom Hintergrund, eigenes Gesamtdesign |
 | 6 | Update-Manager | ✅ ein Klick, Fortschritt + Restzeit, Admins ohne Passwort (Polkit, nur diese Aktion), Sicherheitsupdates markiert (arch-audit), Flatpak, Selbstheilung (Sperre, Schlüsselbund, 404 → Spiegel neu bewerten), „Neustart nötig“, sanfte Erinnerung. Sicherungspunkte macht CachyOS bereits (snap-pac) |
-| 7 | Einstellungen | ✅ Windows-Bereiche, Suche mit Synonymen, KDE-Seiten eingebunden, „Installierte Apps“ mit Deinstallieren. Offen: eigene Laufwerks-Seite (bisher: Automount-Seite + Partitionsverwaltung) |
-| 8 | Doppelklick-Installation | ✅ .AppImage (→ ~/Programme + Startmenü + Symbol), .flatpakref, .pkg.tar.zst, .deb/.rpm → Alternative anbieten |
+| 7 | Einstellungen | ✅ wie Windows 11 **in einem Fenster**: Konto oben links, Suche mit Synonymen, Bereiche und Reihenfolge wie Windows, KDE-Seiten eingebettet (inkl. Unterseiten, Übernehmen/Zurücksetzen, Rückfrage bei ungespeicherten Änderungen), Pfad-Überschrift „System › Bildschirm“, „Installierte Apps“. Alte QWidget-Seiten (z. B. WLAN-Verbindungen) öffnen noch eigene Fenster. Offen: eigene Laufwerks-Seite |
+| 8 | Doppelklick-Installation | ✅ .AppImage (→ ~/Programme + Startmenü + Symbol), .flatpakref, .pkg.tar.zst, .deb/.rpm → Alternative anbieten; mit eingerichtetem Virenschutz wird vorher geprüft |
+| + | Sicherheit | ✅ wie Windows-Sicherheit: Ampel für Virenschutz, Firewall, Updates/Sicherheitslücken, Sicherungspunkte, Bildschirmsperre. Virenschutz (ClamAV) per Klick, prüft auf Knopfdruck und vor Installationen – kein Dauerscanner. Quarantäne, Löschen, Zulassen |
 | 9 | Benachrichtigungen | ✅ 6 Sekunden, Verlauf. Offen: Apps, die „dauerhaft“ erzwingen |
 | 10 | Snap Assist | ⏳ offen |
 
@@ -178,5 +181,6 @@ Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später 
 - [x] `install.sh` / `uninstall.sh` in der VM testen (Startmenü-Symbol der Distribution bleibt jetzt erhalten)
 - [x] Einheitliche App-Namen, Taskmanager, Strg+Alt+Entf, Notfall-Dienst, Speicher-Wächter, Update-Manager, Doppelklick-Installation, Einstellungen
 - [ ] Auf dem eigenen PC ausprobieren (vorher Btrfs-Snapshot)
+- [x] Taskmanager mit Tabs, Sicherheit, Einstellungen in einem Fenster, Strg+Alt+Entf-Fehler bei Sperre/Benutzerwechsel
 - [ ] Startmenü-Favoriten, mehrere Bildschirme, Snap Assist, eigener Medienplayer, Laufwerks-Seite
 - [ ] Später: als Arch-/AUR-Paket

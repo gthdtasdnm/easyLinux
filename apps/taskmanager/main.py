@@ -375,7 +375,8 @@ class Backend(QObject):
 
     @Slot(str)
     def openKcm(self, name):
-        QProcess.startDetached("kcmshell6", [name])
+        # In den easyLinux-Einstellungen öffnen (gleiches Fenster wie alle anderen Einstellungen)
+        QProcess.startDetached("/opt/easylinux/bin/easylinux-settings", [name])
 
 
 def main():
