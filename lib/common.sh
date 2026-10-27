@@ -199,7 +199,7 @@ restore_system() {
         local sysusers
         # shellcheck disable=SC2046
         sysusers="$(pacman -Qlq $(cat "$EASYLINUX_SYS/packages.txt") 2>/dev/null | grep '^/usr/lib/sysusers.d/.*\.conf$' \
-            | xargs -r awk '$1 ~ /^[ug]$/ {print $1, $2}' | sort -u)"
+            | xargs -r awk '$1 ~ /^[ug]!?$/ {print substr($1, 1, 1), $2}' | sort -u)"
         # shellcheck disable=SC2046
         root pacman -Rns --noconfirm $(cat "$EASYLINUX_SYS/packages.txt") || warn "Einige Pakete konnten nicht entfernt werden."
         remove_sysusers "$sysusers"
