@@ -1,8 +1,11 @@
 apps/settings/kcmhost/libkcmhost.so
 apps/settings/kcmhost/moc_kcmhost.cpp
-*.img
-*.iso
-__pycache__/
-*.qcow2
 apps/taskbarmenu/org.easylinux.taskbarmenu.so
 apps/taskbarmenu/taskbarmenu.moc
+*.img
+*.iso
+*.kate-swp
+punkte.txt
+__pycache__/
+*.qcow2
+Ziel.txt
