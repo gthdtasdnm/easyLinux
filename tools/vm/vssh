@@ -1,0 +1,2 @@
+#!/bin/sh
+SSH_ASKPASS="$(cd "$(dirname "$0")" && pwd)/askpass" SSH_ASKPASS_REQUIRE=force exec ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR ${VMUSER:-test}@127.0.0.1 "$@"

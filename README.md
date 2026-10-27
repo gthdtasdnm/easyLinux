@@ -7,7 +7,7 @@ Modernes, einheitliches Design, verständliche Namen, Struktur und Bedienung ang
 Alles soll als Repo veröffentlicht werden, das andere herunterladen und bei sich installieren können
 (erst `install.sh` + `uninstall.sh` mit Sicherung der alten Einstellungen, später Arch-Pakete / AUR).
 
-> Status: **Grundgerüst steht** – Installer/Deinstaller, Taskleiste & Startmenü, Benachrichtigungen. Noch nicht in der VM getestet.
+> Status: **Grundgerüst steht und ist in der VM getestet** – Installer/Deinstaller, Taskleiste & Startmenü, Benachrichtigungen.
 
 ## Installieren / Entfernen
 
@@ -26,6 +26,7 @@ lib/common.sh               Sichern, Wiederherstellen, Plasma steuern
 modules/NN-name/apply.sh    ein Modul pro Funktion, laufen in Nummern-Reihenfolge
   10-layout/                Taskleiste & Startmenü (layout.js = Plasma-Skript)
   20-notifications/         Popups verschwinden nach 6 s, Verlauf bleibt
+tools/vm/                   Test-VM vom Host aus steuern (SSH, Screenshots, Tastatur, Maus)
 ```
 
 Jedes Modul ruft vor einer Änderung `backup_config <datei>` auf – so bleibt alles rückgängig machbar.
@@ -134,13 +135,21 @@ Gesamt: mehrere Monate für alles in guter Qualität, erste sichtbare Ergebnisse
 
 - Host: CachyOS, KDE Plasma 6, Wayland, KVM verfügbar.
 - VM: **GNOME Boxes** (installiert). CachyOS-ISO (Desktop/KDE) von cachyos.org, VM mit 4 Kernen, 8 GB RAM, 40 GB.
-- Nach der Installation sofort Snapshot **„Frisch installiert“** anlegen → nach jedem Test zurücksetzen.
+- Nach der Installation sofort Snapshot **„Frisch installiert“** anlegen → nach jedem Test zurücksetzen. ✅ (`frisch-installiert`)
+- Details zur Einrichtung und Steuerung: [`tools/vm/README.md`](tools/vm/README.md)
+
+### Erkenntnisse aus der VM-Installation (27.10.2026)
+Gute Beispiele dafür, woran Einsteiger scheitern – und was easyLinux später abfangen sollte:
+- **Langsames Netz in der VM:** GNOME Boxes erkennt CachyOS nicht und nimmt alte Hardware (rtl8139) → ~100 B/s. Mit virtio volle Geschwindigkeit.
+- **Installer bricht beim Schlüsselbund ab:** Ein Schlüssel im aktuellen `archlinux-keyring` hatte einen Zeitstempel in der Zukunft → „could not be locally signed“. Gelöst mit `ignore-time-conflict` während der Installation.
+- **Spiegelserver mit 404-Fehlern** (cdn77) – genau das Problem aus Punkt 6 (Update-Manager).
+- **Installer-Firewall greift auf die Live-Umgebung über:** Der Schritt „UFW aktivieren“ blockiert danach auch eingehende Verbindungen im Live-System.
 
 ## Nächste Schritte
 
 - [x] Host neu starten (Kernel-Update), CachyOS-ISO herunterladen
-- [ ] VM in GNOME Boxes installieren, Snapshot „Frisch installiert“ anlegen
+- [x] VM in GNOME Boxes installieren, Snapshot „Frisch installiert“ anlegen
 - [x] Aktuelles Plasma-Layout des Autors auslesen (`~/.config/plasma-org.kde.plasma.desktop-appletsrc` u. a.) und als Basis sichern
 - [x] Git-Repo + Projektstruktur anlegen
-- [ ] `install.sh` / `uninstall.sh` in der VM testen
+- [x] `install.sh` / `uninstall.sh` in der VM testen (Startmenü-Symbol der Distribution bleibt jetzt erhalten)
 - [ ] Einheitliche App-Namen, Design, mehrere Bildschirme

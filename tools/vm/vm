@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# vm shot | vm mouse-start | vm click X Y [right] | vm dbl X Y | vm key KEY... | vm type TEXT
+# X/Y in Pixeln des Screenshots
+set -e
+D=${EASYLINUX_VM:-boxes-unknown-2}; S=${XDG_RUNTIME_DIR:-/tmp}/easylinux-vm; mkdir -p $S
+v(){ virsh -c qemu:///session "$@"; }
+case "$1" in
+  shot) v screenshot $D $S/vm.ppm >/dev/null; magick $S/vm.ppm $S/vm.png; echo $S/vm.png;;
+  mouse-start)
+    "$(dirname "$0")/vssh" 'cat > /tmp/vmouse.py' < "$(dirname "$0")/vmouse.py"
+    "$(dirname "$0")/vssh" "echo ${VMPASS:-testpass1234} | sudo -S sh -c 'pkill -f ^python3./tmp/vmouse; nohup python3 /tmp/vmouse.py 1024 768 >/dev/null 2>&1 </dev/null &'" 2>/dev/null;;
+  click) "$(dirname "$0")/vssh" "echo click $2 $3 ${4:-left} > /tmp/vmouse";;
+  dbl) "$(dirname "$0")/vssh" "echo dbl $2 $3 > /tmp/vmouse";;
+  key) shift; v send-key $D "$@" >/dev/null;;
+  type) shift; python3 "$(dirname "$0")/typer.py" "${VMKB:-de}" "$*" | while read -r k; do v send-key $D $k >/dev/null; done;;
+esac

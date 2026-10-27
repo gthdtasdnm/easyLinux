@@ -1,0 +1,3 @@
+#!/bin/sh
+# Befehl in der grafischen Sitzung des Testbenutzers ausführen (wie aus einem Terminal dort)
+printf '%s\n' "export XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus WAYLAND_DISPLAY=wayland-0 XDG_CURRENT_DESKTOP=KDE XDG_SESSION_TYPE=wayland" "$*" | "$(dirname "$0")/vssh" bash -s
