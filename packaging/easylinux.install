@@ -1,0 +1,50 @@
+# Systemweite Schritte, die sich nicht als Datei im Paket ausliefern lassen.
+STATE=/var/lib/easylinux
+
+_setup() {
+    mkdir -p "$STATE"
+    systemctl daemon-reload
+    # Strg+Alt+Entf startet sonst sofort neu – easyLinux zeigt stattdessen den Windows-Bildschirm
+    if [ "$(systemctl is-enabled ctrl-alt-del.target 2>/dev/null)" != masked ]; then
+        systemctl mask ctrl-alt-del.target >/dev/null 2>&1 && touch "$STATE/masked-ctrl-alt-del"
+    fi
+    systemctl restart easylinux-emergency.service 2>/dev/null || true
+    systemctl enable systemd-oomd.service >/dev/null 2>&1 || true
+    systemctl try-restart systemd-oomd.service 2>/dev/null || true
+    # Flatpak-Apps übernehmen Farben und Schrift des Systems
+    if [ ! -e /var/lib/flatpak/overrides/global ]; then
+        install -D -m 644 /usr/share/easylinux/flatpak-overrides /var/lib/flatpak/overrides/global
+        touch "$STATE/flatpak-overrides"
+    fi
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo >/dev/null 2>&1 || true
+    /opt/easylinux/bin/easylinux-rebuild
+    /opt/easylinux/bin/easylinux-names
+}
+
+post_install() {
+    _setup
+    echo ":: easyLinux wird beim nächsten Anmelden für jeden Benutzer eingerichtet."
+}
+
+post_upgrade() {
+    _setup
+}
+
+pre_remove() {
+    /opt/easylinux/bin/easylinux-names --remove
+    /opt/easylinux/bin/easylinux-rebuild --clean
+    systemctl stop easylinux-emergency.service 2>/dev/null || true
+    if [ -e "$STATE/masked-ctrl-alt-del" ]; then
+        systemctl unmask ctrl-alt-del.target >/dev/null 2>&1 || true
+    fi
+    if [ -e "$STATE/flatpak-overrides" ] && cmp -s /usr/share/easylinux/flatpak-overrides /var/lib/flatpak/overrides/global; then
+        rm -f /var/lib/flatpak/overrides/global
+        rmdir /var/lib/flatpak/overrides 2>/dev/null || true
+    fi
+}
+
+post_remove() {
+    systemctl daemon-reload
+    systemctl try-restart systemd-oomd.service 2>/dev/null || true
+    rm -rf "$STATE" /opt/easylinux
+}

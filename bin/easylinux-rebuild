@@ -1,18 +1,31 @@
 #!/bin/sh
-# Baut die C++-Teile von easyLinux nach Qt-/Plasma-Updates neu (aufgerufen vom pacman-Hook).
-# Schlägt ein Bau fehl, wird der Teil entfernt – dann gilt wieder das Plasma-Standardverhalten.
+# Baut die C++-Teile von easyLinux gegen die installierte Qt-/Plasma-Version – bei der Installation
+# und nach Qt-/Plasma-Updates (pacman-Hook). Schlägt ein Bau fehl, wird der Teil entfernt; dann gilt
+# wieder das Plasma-Standardverhalten bzw. öffnen sich Einstellungsseiten in eigenen Fenstern.
+#   easylinux-rebuild           bauen
+#   easylinux-rebuild --clean   gebaute Dateien entfernen (beim Deinstallieren)
 OPT=/opt/easylinux
 PLUGIN=/usr/lib/qt6/plugins/plasma/containmentactions/org.easylinux.taskbarmenu.so
+KCMHOST=$OPT/apps/settings/kcmhost/libkcmhost.so
+INSTALLER=$OPT/apps/installer/easylinux-installer
+
+if [ "${1:-}" = --clean ]; then
+    rm -f "$PLUGIN" "$KCMHOST" "$INSTALLER" "$OPT/apps/taskbarmenu/org.easylinux.taskbarmenu.so"
+    exit 0
+fi
 
 if ! sh "$OPT/apps/settings/kcmhost/build.sh" >/dev/null 2>&1; then
-    rm -f "$OPT/apps/settings/kcmhost/libkcmhost.so"   # Einstellungsseiten öffnen dann eigene Fenster
-    echo "easyLinux: Einstellungen-Brücke konnte nicht neu gebaut werden"
+    rm -f "$KCMHOST"
+    echo "easyLinux: Einstellungen-Brücke konnte nicht gebaut werden"
 fi
-if [ -e "$PLUGIN" ]; then
-    if sh "$OPT/apps/taskbarmenu/build.sh" >/dev/null 2>&1; then
-        install -m 755 "$OPT/apps/taskbarmenu/org.easylinux.taskbarmenu.so" "$PLUGIN"
-    else
-        echo "easyLinux: Rechtsklickmenü konnte nicht neu gebaut werden (wirkt nach dem nächsten Anmelden wie vorher)"
-    fi
+if sh "$OPT/apps/taskbarmenu/build.sh" >/dev/null 2>&1; then
+    install -D -m 755 "$OPT/apps/taskbarmenu/org.easylinux.taskbarmenu.so" "$PLUGIN"
+else
+    rm -f "$PLUGIN"
+    echo "easyLinux: Rechtsklickmenü konnte nicht gebaut werden"
+fi
+if ! sh "$OPT/apps/installer/build.sh" >/dev/null 2>&1; then
+    rm -f "$INSTALLER"
+    echo "easyLinux: Installer konnte nicht gebaut werden"
 fi
 exit 0

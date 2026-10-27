@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=easyLinux einrichten
+Comment=Richtet easyLinux beim ersten Anmelden für diesen Benutzer ein
+Exec=/opt/easylinux/bin/easylinux-user-setup
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2

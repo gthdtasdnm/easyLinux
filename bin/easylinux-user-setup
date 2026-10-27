@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Einrichtung von easyLinux für den angemeldeten Benutzer (Leiste, Tastenkürzel, Standard-Apps …).
+# Das Systempaket kann den Benutzerordner nicht ändern – deshalb läuft dieses Skript beim Anmelden
+# (Autostart) und richtet beim ersten Mal bzw. nach einem Update der Einrichtung alles ein.
+#
+#   easylinux-user-setup            einrichten, falls noch nicht geschehen (Autostart)
+#   easylinux-user-setup --force    jetzt einrichten (Installer), ohne Hinweis am Ende
+#   easylinux-user-setup --remove   alles für diesen Benutzer zurücknehmen
+set -uo pipefail
+OPT=/opt/easylinux
+. "$OPT/lib/common.sh"
+VERSION="$(cat "$OPT/user/VERSION")"
+MARKER="$EASYLINUX_STATE/user-setup-version"
+LOG="$EASYLINUX_STATE/user-setup.log"
+
+wait_for_desktop() {
+    # Beim Anmelden starten Autostart-Programme manchmal vor der Leiste
+    for _ in $(seq 60); do
+        plasma_running && qdbus6 org.kde.plasmashell /PlasmaShell >/dev/null 2>&1 && return 0
+        sleep 1
+    done
+    return 1
+}
+
+apply() {
+    mkdir -p "$EASYLINUX_STATE"
+    local failed=0 step
+    for step in "$OPT"/user/*/apply.sh; do
+        bash "$step" >>"$LOG" 2>&1 || { failed=1; echo "Fehler in $step" >>"$LOG"; }
+    done
+    kbuildsycoca6 >/dev/null 2>&1 || true
+    [ "$failed" = 0 ] && echo "$VERSION" > "$MARKER"
+    return "$failed"
+}
+
+remove() {
+    local step was_running=false
+    for step in $(ls -r "$OPT"/user/*/revert.sh 2>/dev/null); do bash "$step" >/dev/null 2>&1 || true; done
+    plasma_running && was_running=true
+    plasma_stop
+    restore_configs
+    remove_user_files
+    $was_running && plasma_start
+    kbuildsycoca6 >/dev/null 2>&1 || true
+    rm -rf "$EASYLINUX_STATE"
+}
+
+case "${1:-}" in
+    --remove)
+        remove ;;
+    --force)
+        wait_for_desktop || exit 1
+        apply ;;
+    *)
+        [ "$(cat "$MARKER" 2>/dev/null)" = "$VERSION" ] && exit 0
+        wait_for_desktop || exit 1
+        apply || true
+        # Tastenkürzel neuer Programme greifen erst nach dem nächsten Anmelden
+        action="$(notify-send -a easyLinux -i preferences-system -A logout="Jetzt abmelden" -t 0 \
+            "easyLinux ist eingerichtet" \
+            "Melden Sie sich einmal ab und wieder an, damit alles (z. B. Strg+Alt+Entf) aktiv wird." 2>/dev/null)"
+        [ "$action" = logout ] && qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout
+        ;;
+esac

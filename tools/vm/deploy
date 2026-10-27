@@ -1,5 +1,5 @@
 #!/bin/sh
 # Geänderte apps/, bin/, data/ in eine VM mit installiertem easyLinux einspielen und Dienste neu starten
 cd "$(dirname "$0")/../.." || exit 1
-tar cz apps bin data | "$(dirname "$0")/vssh" "SUDO_ASKPASS=\$HOME/.askpass sudo -A sh -c 'tar xzf - -C /opt/easylinux --no-same-owner && sh /opt/easylinux/apps/settings/kcmhost/build.sh && systemctl restart easylinux-emergency'"
+tar cz apps bin data lib user | "$(dirname "$0")/vssh" "SUDO_ASKPASS=\$HOME/.askpass sudo -A sh -c 'tar xzf - -C /opt/easylinux --no-same-owner && sh /opt/easylinux/apps/settings/kcmhost/build.sh && systemctl restart easylinux-emergency'"
 "$(dirname "$0")/vssh" 'systemctl --user restart easylinux-taskmanager'

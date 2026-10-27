@@ -1,0 +1,32 @@
+# easyLinux als Arch-/CachyOS-Paket – gebaut direkt aus dem Repository (tools/release/release.sh).
+# Systemteile liegen unter system/ genau so, wie sie im System landen; Programme unter /opt/easylinux.
+# Die Einrichtung pro Benutzer (Leiste, Tastenkürzel …) macht easylinux-user-setup beim Anmelden.
+pkgname=easylinux
+pkgver=$(cat "$startdir/../VERSION")
+pkgrel=1
+pkgdesc="CachyOS mit KDE Plasma einsteigerfreundlich und Windows-ähnlich machen"
+arch=('any')
+url="https://github.com/gthdtasdnm/easyLinux"
+license=('unknown')
+depends=(
+    python pyside6 kdialog pacman-contrib arch-audit flatpak fuse2 breeze-gtk xdg-desktop-portal-kde
+    plasma-workspace kwin libplasma kcmutils kio kconfig kservice kdbusaddons kde-cli-tools qt6-base
+    qt6-declarative qt6-tools libnotify polkit systemd konsole dolphin
+    # Zum Bauen der C++-Teile gegen die installierte Plasma-Version (siehe easylinux-rebuild)
+    gcc pkgconf
+)
+install=easylinux.install
+
+package() {
+    local src="$startdir/.."
+    install -d "$pkgdir/opt/easylinux"
+    cp -r "$src"/{apps,bin,data,lib,user} "$pkgdir/opt/easylinux/"
+    cp -a "$src/system/." "$pkgdir/"
+    # Nur Quellen ausliefern – Gebautes entsteht auf dem Zielrechner (easylinux-rebuild)
+    find "$pkgdir/opt/easylinux" \( -name __pycache__ -o -name '*.so' -o -name '*.moc' -o -name 'moc_*.cpp' \
+        -o -name easylinux-installer -type f \) -prune -exec rm -rf {} +
+    chmod -R u=rwX,go=rX "$pkgdir/opt/easylinux"
+    chmod 755 "$pkgdir"/opt/easylinux/bin/* "$pkgdir"/opt/easylinux/apps/*/helper.py \
+        "$pkgdir"/opt/easylinux/apps/*/build.sh "$pkgdir"/opt/easylinux/apps/settings/kcmhost/build.sh \
+        "$pkgdir"/opt/easylinux/user/*/*.sh
+}

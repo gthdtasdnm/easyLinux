@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>install-root.sh</file>
+        <file>remove-root.sh</file>
+        <file>easylinux.svg</file>
+    </qresource>
+</RCC>

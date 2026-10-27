@@ -53,6 +53,8 @@ ENTRIES = [
      "kcm_smserver", "anmelden abmelden herunterfahren sitzung wiederherstellen"),
     ("system", "Erweiterte Einstellungen", "Alle KDE-Einstellungen für Fortgeschrittene", "preferences-system",
      "app:systemsettings", "kde systemeinstellungen erweitert alle experte"),
+    ("system", "easyLinux", "easyLinux verwalten oder wieder entfernen", "preferences-desktop-theme-global",
+     "app:easylinux-installer", "easylinux entfernen deinstallieren zurücksetzen windows"),
     ("system", "Info", "Prozessor, Arbeitsspeicher, Grafikkarte, Version", "hwinfo",
      "kcm_about-distro", "info über computer hardware cpu grafikkarte version kernel systeminformationen"),
     # ---------------- Bluetooth & Geräte

@@ -1,4 +1,4 @@
-# Gemeinsame Funktionen für install.sh, uninstall.sh und die Module.
+# Gemeinsame Funktionen für die Einrichtung pro Benutzer (easylinux-user-setup, user/*/apply.sh).
 # Wird per "source" eingebunden, nicht direkt ausgeführt.
 
 EASYLINUX_STATE="${XDG_DATA_HOME:-$HOME/.local/share}/easylinux"
@@ -9,11 +9,6 @@ info()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 ok()    { printf '\033[1;32m ✓\033[0m %s\n' "$*"; }
 warn()  { printf '\033[1;33m !\033[0m %s\n' "$*" >&2; }
 fail()  { printf '\033[1;31m ✗\033[0m %s\n' "$*" >&2; exit 1; }
-
-require_user_session() {
-    [ "$(id -u)" -ne 0 ] || fail "Bitte nicht als root / mit sudo starten, sondern als normaler Benutzer."
-    [ "${XDG_CURRENT_DESKTOP:-}" = "KDE" ] || warn "Keine KDE-Sitzung erkannt – einige Schritte wirken erst nach dem nächsten Anmelden."
-}
 
 # Sichert eine Konfigurationsdatei (Pfad relativ zu ~/.config), bevor easyLinux sie ändert.
 # Es wird nur der Zustand VOR der ersten Installation gesichert; spätere Aufrufe überschreiben ihn nicht.
@@ -88,132 +83,5 @@ plasma_eval() {
     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$1")"
 }
 
-# ---------------------------------------------------------------------------
-# Systemweite Änderungen (brauchen root). Alles wird in $EASYLINUX_SYS protokolliert,
-# damit uninstall.sh es vollständig zurücknehmen kann.
-EASYLINUX_SYS=/var/lib/easylinux
+# Systemteile (Programme, Dienste, Regeln) bringt das Paket „easylinux“ mit – siehe packaging/.
 EASYLINUX_OPT=/opt/easylinux
-
-root() {
-    if [ "$(id -u)" -eq 0 ]; then "$@"
-    elif [ -n "${SUDO_ASKPASS:-}" ]; then sudo -A "$@"
-    else sudo "$@"; fi
-}
-
-_sys_log() { root mkdir -p "$EASYLINUX_SYS"; echo "$2" | root tee -a "$EASYLINUX_SYS/$1" >/dev/null; }
-
-# Datei systemweit ablegen. Eine vorhandene Datei wird vorher gesichert.
-sys_put() {
-    local src="$1" dest="$2" mode="${3:-644}"
-    root mkdir -p "$EASYLINUX_SYS/backup"
-    if ! root grep -qxF "$dest" "$EASYLINUX_SYS/files.txt" 2>/dev/null; then
-        if [ -e "$dest" ]; then
-            root mkdir -p "$(dirname "$EASYLINUX_SYS/backup$dest")"
-            root cp -a "$dest" "$EASYLINUX_SYS/backup$dest"
-        fi
-        _sys_log files.txt "$dest"
-    fi
-    root install -D -m "$mode" "$src" "$dest"
-}
-
-# Inhalt von stdin als Systemdatei ablegen.
-sys_write() {
-    local tmp; tmp="$(mktemp)"; cat > "$tmp"
-    sys_put "$tmp" "$1" "${2:-644}"; rm -f "$tmp"
-}
-
-# Pakete installieren; gemerkt werden nur die, die vorher fehlten.
-pkg_need() {
-    local p missing=()
-    for p in "$@"; do pacman -Qq "$p" >/dev/null 2>&1 || missing+=("$p"); done
-    [ ${#missing[@]} -eq 0 ] && return 0
-    info "Installiere: ${missing[*]}"
-    root pacman -S --needed --noconfirm "${missing[@]}"
-    root mkdir -p "$EASYLINUX_SYS"
-    for p in "${missing[@]}"; do _sys_log packages.txt "$p"; done
-}
-
-# systemd-Einheit aktivieren und fürs Deinstallieren merken.
-unit_enable() {
-    root systemctl daemon-reload
-    root systemctl enable --now "$1"
-    _sys_log units.txt "$1"
-}
-
-user_unit_enable() {
-    systemctl --user daemon-reload
-    systemctl --user enable --now "$1"
-    echo "$1" >> "$EASYLINUX_STATE/user-units.txt"
-}
-
-# Leere Ordner entfernen, die easyLinux angelegt hat – aber nie solche, die einem Paket gehören.
-remove_empty_dirs() {
-    local d="$1"
-    while [ "$d" != / ] && [ -d "$d" ] && [ -z "$(ls -A "$d")" ] && ! pacman -Qqo "$d" >/dev/null 2>&1; do
-        root rmdir "$d" || break
-        d="$(dirname "$d")"
-    done
-}
-
-# Benutzer/Gruppen entfernen, die nur für die entfernten Pakete angelegt wurden –
-# aber nie solche, die ein noch installiertes Paket weiterhin anlegt.
-remove_sysusers() {
-    local kind name
-    while read -r kind name; do
-        [ -n "$name" ] || continue
-        if cat /usr/lib/sysusers.d/*.conf 2>/dev/null | awk -v n="$name" '$2 == n {f=1} END {exit !f}'; then
-            continue
-        fi
-        if [ "$kind" = u ] && getent passwd "$name" >/dev/null; then
-            root userdel "$name" 2>/dev/null || true
-        fi
-        if getent group "$name" >/dev/null; then
-            root groupdel "$name" 2>/dev/null || true
-        fi
-    done <<< "$1"
-}
-
-restore_system() {
-    [ -d "$EASYLINUX_SYS" ] || return 0
-    local f
-    if [ -f "$EASYLINUX_SYS/units.txt" ]; then
-        while IFS= read -r f; do root systemctl disable --now "$f" 2>/dev/null || true; done < "$EASYLINUX_SYS/units.txt"
-    fi
-    if [ -f "$EASYLINUX_SYS/files.txt" ]; then
-        while IFS= read -r f; do
-            if [ -e "$EASYLINUX_SYS/backup$f" ]; then root cp -a "$EASYLINUX_SYS/backup$f" "$f"
-            else root rm -f "$f"; remove_empty_dirs "$(dirname "$f")"; fi
-        done < "$EASYLINUX_SYS/files.txt"
-    fi
-    if [ -f "$EASYLINUX_SYS/masked.txt" ]; then
-        while IFS= read -r f; do root systemctl unmask "$f" >/dev/null 2>&1 || true; done < "$EASYLINUX_SYS/masked.txt"
-    fi
-    root rm -rf "$EASYLINUX_OPT"
-    if [ -d /usr/local/share/mime ]; then
-        if [ -z "$(ls -A /usr/local/share/mime/packages 2>/dev/null)" ]; then root rm -rf /usr/local/share/mime
-        else root update-mime-database /usr/local/share/mime >/dev/null 2>&1 || true; fi
-    fi
-    root systemctl daemon-reload
-    if [ -s "$EASYLINUX_SYS/packages.txt" ]; then
-        # Systembenutzer/-gruppen, die diese Pakete angelegt haben (pacman entfernt sie nicht)
-        local sysusers
-        # shellcheck disable=SC2046
-        sysusers="$(pacman -Qlq $(cat "$EASYLINUX_SYS/packages.txt") 2>/dev/null | grep '^/usr/lib/sysusers.d/.*\.conf$' \
-            | xargs -r awk '$1 ~ /^[ug]!?$/ {print substr($1, 1, 1), $2}' | sort -u)"
-        # shellcheck disable=SC2046
-        root pacman -Rns --noconfirm $(cat "$EASYLINUX_SYS/packages.txt") || warn "Einige Pakete konnten nicht entfernt werden."
-        remove_sysusers "$sysusers"
-    fi
-    root rm -rf "$EASYLINUX_SYS"
-    root systemctl try-restart systemd-oomd.service 2>/dev/null || true
-}
-
-restore_user_units() {
-    [ -f "$EASYLINUX_STATE/user-units.txt" ] || return 0
-    local u
-    while IFS= read -r u; do
-        systemctl --user disable --now "$u" 2>/dev/null || true
-        rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/systemd/timers/stamp-$u"
-    done < "$EASYLINUX_STATE/user-units.txt"
-    rmdir -p --ignore-fail-on-non-empty "$EASYLINUX_CONFIG/systemd/user" "${XDG_DATA_HOME:-$HOME/.local/share}/systemd/timers" 2>/dev/null || true
-}

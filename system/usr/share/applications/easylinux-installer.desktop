@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=easyLinux
+Comment=easyLinux verwalten oder entfernen
+Exec=/opt/easylinux/apps/installer/easylinux-installer
+Icon=preferences-desktop-theme-global
+NoDisplay=true

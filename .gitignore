@@ -1,10 +1,17 @@
+apps/installer/easylinux-installer
+apps/installer/main.moc
+apps/installer/qrc_installer.cpp
 apps/settings/kcmhost/libkcmhost.so
 apps/settings/kcmhost/moc_kcmhost.cpp
 apps/taskbarmenu/org.easylinux.taskbarmenu.so
 apps/taskbarmenu/taskbarmenu.moc
+dist/
 *.img
 *.iso
 *.kate-swp
+packaging/pkg/
+packaging/*.pkg.tar.zst
+packaging/src/
 punkte.txt
 __pycache__/
 *.qcow2

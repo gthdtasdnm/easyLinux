@@ -6,7 +6,7 @@ Kann nur genau diese Aktionen:
   firewall-on       → Firewall (ufw) einschalten
   setup-antivirus   → ClamAV installieren, Virensignaturen laden, tägliche Aktualisierung einschalten
 Fortschritt kommt als JSON-Zeilen: {"progress": 0–1, "text": "…"} und am Ende {"done": true, "ok": …}.
-Von easyLinux installierte Pakete und Dienste werden vermerkt, damit uninstall.sh sie wieder entfernt.
+Von easyLinux installierte Pakete und Dienste werden vermerkt, damit „easyLinux entfernen“ sie mit entfernt.
 """
 import json
 import os
