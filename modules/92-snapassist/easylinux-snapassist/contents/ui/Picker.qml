@@ -4,7 +4,7 @@ import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kwin
 
-// Auswahl in der freien Bildschirmhälfte: Vorschaubilder der übrigen Fenster, als Raster mittig angeordnet.
+// Auswahl in der freien Bildschirmhälfte: Vorschaubilder der übrigen Fenster, mittig in Reihen angeordnet.
 // Nur die Vorschaubilder sind anklickbar – ein Klick daneben bricht ab.
 // (PlasmaCore.Dialog statt QtQuick-Window: „Window“ bezeichnet in org.kde.kwin ein Programmfenster.)
 PlasmaCore.Dialog {
@@ -21,25 +21,59 @@ PlasmaCore.Dialog {
     property var source: null      // das gerade angedockte Fenster
     property bool settling: false  // kurz nach dem Öffnen: Aktivierungen durch das Andocken selbst ignorieren
 
-    // Raster wie bei Windows: möglichst große Vorschaubilder, aber nicht breiter als knapp die halbe
-    // Fläche – bei gleicher Größe lieber nebeneinander als untereinander
-    readonly property real ratio: 16 / 10
+    // Anordnung wie eine Fotogalerie: Fenster in Reihen nebeneinander, jedes im eigenen Seitenverhältnis.
+    // Gesucht wird die größte Bildhöhe, bei der alle Reihen in die freie Fläche passen – so stehen die
+    // Fenster bei breiter Fläche von selbst nebeneinander, bei hoher eher untereinander.
     readonly property int gap: Kirigami.Units.gridUnit
     readonly property int captionHeight: Kirigami.Units.gridUnit * 2
-    readonly property var layout: {
-        const n = Math.max(1, windows.length);
-        const w = content.width - gap * 2, h = content.height - heading.height - gap * 3;
-        const maxW = Math.min(w * 0.45, Kirigami.Units.gridUnit * 22);
-        let best = { cols: 1, size: 0 };
-        for (let cols = 1; cols <= n; cols++) {
-            const rows = Math.ceil(n / cols);
-            const byWidth = (w - gap * (cols - 1)) / cols;
-            const byHeight = ((h - gap * (rows - 1)) / rows - captionHeight) * ratio;
-            const size = Math.min(maxW, byWidth, byHeight);
-            if (size >= best.size - 1)
-                best = { cols: cols, size: size };
+    readonly property int pad: Kirigami.Units.smallSpacing      // Rahmen um das Vorschaubild
+    readonly property var boxes: {
+        const W = content.width - gap * 2;
+        const H = content.height - heading.height - gap * 3;
+        const aspects = windows.map(w => {
+            const g = w.frameGeometry;
+            return g.height > 0 ? Math.min(2.5, Math.max(0.5, g.width / g.height)) : 1.6;
+        });
+        if (aspects.length === 0 || W <= 0 || H <= 0)
+            return [];
+        // Reihen für eine Bildhöhe h bilden; null, wenn es nicht passt
+        const pack = h => {
+            const rows = [[]];
+            let x = 0;
+            for (let i = 0; i < aspects.length; i++) {
+                const w = h * aspects[i] + pad * 2;
+                if (w > W)
+                    return null;
+                if (x > 0 && x + gap + w > W) {
+                    rows.push([]);
+                    x = 0;
+                }
+                x += (x > 0 ? gap : 0) + w;
+                rows[rows.length - 1].push(i);
+            }
+            const total = rows.length * (h + pad * 2 + captionHeight) + (rows.length - 1) * gap;
+            return total <= H ? rows : null;
+        };
+        // Nicht größer als knapp die halbe Höhe – sonst wirkt ein einzelnes Fenster riesig
+        let lo = 20, hi = Math.max(20, H * 0.45);
+        for (let k = 0; k < 24; k++) {
+            const mid = (lo + hi) / 2;
+            if (pack(mid)) lo = mid; else hi = mid;
         }
-        return best;
+        const h = lo, rows = pack(h) || [aspects.map((_, i) => i)];
+        const rowH = h + pad * 2 + captionHeight;
+        const top = heading.height + gap * 2 + (H - (rows.length * rowH + (rows.length - 1) * gap)) / 2;
+        const result = [];
+        rows.forEach((row, r) => {
+            const widths = row.map(i => h * aspects[i] + pad * 2);
+            const rowW = widths.reduce((a, b) => a + b, 0) + gap * (row.length - 1);
+            let x = gap + (W - rowW) / 2;
+            row.forEach((i, j) => {
+                result.push({ index: i, x: x, y: top + r * (rowH + gap), w: widths[j], h: rowH });
+                x += widths[j] + gap;
+            });
+        });
+        return result;
     }
 
     function show(freeArea, candidates, left, sourceWindow) {
@@ -94,49 +128,45 @@ PlasmaCore.Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        Grid {
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: heading.height / 2
-            columns: picker.layout.cols
-            spacing: picker.gap
+        Repeater {
+            model: picker.boxes
+            delegate: Rectangle {
+                id: card
+                required property var modelData
+                readonly property var window: picker.windows[modelData.index]
+                x: modelData.x
+                y: modelData.y
+                width: modelData.w
+                height: modelData.h
+                radius: Kirigami.Units.cornerRadius
+                color: hover.hovered ? Qt.alpha(Kirigami.Theme.highlightColor, 0.25) : Qt.alpha(Kirigami.Theme.textColor, 0.06)
+                border.color: hover.hovered ? Kirigami.Theme.highlightColor : Qt.alpha(Kirigami.Theme.textColor, 0.12)
+                border.width: hover.hovered ? 2 : 1
 
-            Repeater {
-                model: picker.windows
-                delegate: Rectangle {
-                    id: card
-                    required property var modelData
-                    width: picker.layout.size
-                    height: picker.layout.size / picker.ratio + picker.captionHeight
-                    radius: Kirigami.Units.cornerRadius
-                    color: hover.hovered ? Qt.alpha(Kirigami.Theme.highlightColor, 0.25) : Qt.alpha(Kirigami.Theme.textColor, 0.06)
-                    border.color: hover.hovered ? Kirigami.Theme.highlightColor : Qt.alpha(Kirigami.Theme.textColor, 0.12)
-                    border.width: hover.hovered ? 2 : 1
-
-                    WindowThumbnail {
-                        anchors { top: parent.top; left: parent.left; right: parent.right; bottom: caption.top; margins: Kirigami.Units.smallSpacing }
-                        client: card.modelData
-                    }
-                    Row {
-                        id: caption
-                        anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
-                        height: picker.captionHeight
-                        spacing: Kirigami.Units.smallSpacing
-                        Kirigami.Icon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            source: card.modelData.icon
-                            width: Kirigami.Units.iconSizes.small
-                            height: width
-                        }
-                        QQC2.Label {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: card.modelData.caption
-                            width: Math.min(implicitWidth, card.width - Kirigami.Units.gridUnit * 3)
-                            elide: Text.ElideRight
-                        }
-                    }
-                    HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: picker.choose(card.modelData) }
+                WindowThumbnail {
+                    anchors { top: parent.top; left: parent.left; right: parent.right; bottom: caption.top; margins: picker.pad }
+                    client: card.window
                 }
+                Row {
+                    id: caption
+                    anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                    height: picker.captionHeight
+                    spacing: Kirigami.Units.smallSpacing
+                    Kirigami.Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: card.window ? card.window.icon : ""
+                        width: Kirigami.Units.iconSizes.small
+                        height: width
+                    }
+                    QQC2.Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: card.window ? card.window.caption : ""
+                        width: Math.min(implicitWidth, card.width - Kirigami.Units.gridUnit * 2.5)
+                        elide: Text.ElideRight
+                    }
+                }
+                HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: picker.choose(card.window) }
             }
         }
     }
