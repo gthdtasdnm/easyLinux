@@ -165,6 +165,7 @@ restore_system() {
         root pacman -Rns --noconfirm $(cat "$EASYLINUX_SYS/packages.txt") || warn "Einige Pakete konnten nicht entfernt werden."
     fi
     root rm -rf "$EASYLINUX_SYS"
+    root systemctl try-restart systemd-oomd.service 2>/dev/null || true
 }
 
 restore_user_units() {
