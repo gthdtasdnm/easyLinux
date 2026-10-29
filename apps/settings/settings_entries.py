@@ -53,6 +53,9 @@ ENTRIES = [
      "app:easylinux-taskmanager", "prozesse hängt absturz beenden cpu ram auslastung"),
     ("system", "Sitzung & Start", "Was beim Anmelden passiert, Herunterfahren", "system-log-out",
      "kcm_smserver", "anmelden abmelden herunterfahren sitzung wiederherstellen"),
+    ("system", "Für Entwickler", "Eigene Dienste, Server und Skripte an- und ausschalten", "code-context",
+     "page:developer", "entwickler programmieren dienste dienst server skripte skript systemd service timer port "
+     "hintergrund autostart localhost webserver coding agent claude ki"),
     ("system", "Erweiterte Einstellungen", "Alle KDE-Einstellungen für Fortgeschrittene", "preferences-system",
      "app:systemsettings", "kde systemeinstellungen erweitert alle experte"),
     ("system", "easyLinux", "easyLinux verwalten oder wieder entfernen", "preferences-desktop-theme-global",

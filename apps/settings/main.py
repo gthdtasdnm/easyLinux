@@ -23,6 +23,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from easylinux import desktop, single
+from developer import Developer
 from display import Display
 from snapassist import SnapAssist
 from settings_entries import CATEGORIES, ENTRIES
@@ -326,6 +327,9 @@ def main():
     engine.rootContext().setContextProperty("display", display)
     snap_assist = SnapAssist()
     engine.rootContext().setContextProperty("snapAssist", snap_assist)
+    developer = Developer()
+    developer.message.connect(backend.message)
+    engine.rootContext().setContextProperty("developer", developer)
     engine.rootContext().setContextProperty("kcmHostAvailable", host)
     engine.rootContext().setContextProperty("startPage", page)
     engine.load(os.path.join(HERE, "Main.qml"))
