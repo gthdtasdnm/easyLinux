@@ -171,7 +171,7 @@ ENTRIES = [
      "kcm_feedback", "telemetrie feedback daten senden diagnose"),
     # ---------------- Update
     ("update", "Updates", "Computer und Apps aktualisieren", "system-software-update",
-     "app:easylinux-updater", "update aktualisieren upgrade sicherheit"),
+     "app:easylinux-updater", "update aktualisieren upgrade sicherheit automatisch"),
     ("update", "Sicherungspunkte", "Zu einem früheren Stand zurückkehren", "timeshift",
      "app:btrfs-assistant", "snapshot sicherung wiederherstellen zurücksetzen backup"),
 ]

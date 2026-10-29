@@ -1,0 +1,9 @@
+[Unit]
+Description=easyLinux: alle 10 Minuten nachsehen, ob ein automatisches Update passt
+
+[Timer]
+OnBootSec=10min
+OnUnitInactiveSec=10min
+
+[Install]
+WantedBy=timers.target

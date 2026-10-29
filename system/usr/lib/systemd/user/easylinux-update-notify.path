@@ -1,0 +1,8 @@
+[Unit]
+Description=easyLinux: nach einem automatischen Update ggf. Bescheid geben
+
+[Path]
+PathChanged=/var/lib/easylinux/autoupdate-result.json
+
+[Install]
+WantedBy=graphical-session.target

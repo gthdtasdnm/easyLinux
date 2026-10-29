@@ -1,0 +1,11 @@
+[Unit]
+Description=easyLinux: Updates automatisch installieren, wenn niemand den Computer benutzt
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/easylinux/apps/updater/helper.py auto-update
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=3h

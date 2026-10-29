@@ -3,6 +3,7 @@
   easylinux-updater           Fenster öffnen
   easylinux-updater --install Fenster öffnen und gleich aktualisieren (z. B. aus der Erinnerung)
   easylinux-updater --check   nur prüfen und ggf. sanft erinnern (für den täglichen Timer)
+  easylinux-updater --notify  nach einem automatischen Update ggf. einmal Bescheid geben
 """
 import datetime
 import json
@@ -19,6 +20,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELPER = os.path.join(HERE, "helper.py")
 REMIND_AFTER_DAYS = 7
+AUTO_CONF = "/var/lib/easylinux/autoupdate.json"
+AUTO_STATE = "/var/lib/easylinux/autoupdate-state.json"
+AUTO_RESULT = "/var/lib/easylinux/autoupdate-result.json"
+NOTIFIED = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "easylinux", "autoupdate-notified")
 
 
 # ---------------------------------------------------------------- Prüfen (ohne root)
@@ -73,8 +78,50 @@ def human(n):
         n /= 1024
 
 
+def read_json(path, default):
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return default
+
+
+def auto_enabled():
+    return read_json(AUTO_CONF, {}).get("enabled", True)
+
+
+def notify_result():
+    """Nach einem automatischen Update nur dann eine (einzige) Meldung, wenn ein Neustart sinnvoll ist."""
+    res = read_json(AUTO_RESULT, {})
+    stamp = res.get("time", "")
+    try:
+        with open(NOTIFIED) as fh:
+            if fh.read().strip() == stamp:
+                return
+    except OSError:
+        pass
+    os.makedirs(os.path.dirname(NOTIFIED), exist_ok=True)
+    with open(NOTIFIED, "w") as fh:
+        fh.write(stamp)
+    if not (res.get("ok") and res.get("reboot")) or not shutil.which("notify-send"):
+        return  # Fehlschläge versucht die Automatik später selbst noch einmal
+    try:
+        if datetime.datetime.now() - datetime.datetime.fromisoformat(stamp) > datetime.timedelta(days=3):
+            return
+    except ValueError:
+        return
+    r = subprocess.run(["notify-send", "-a", "Updates", "-i", "system-software-update", "-u", "low",
+                        "-A", "reboot=Jetzt neu starten", "-A", "later=Später",
+                        "Updates wurden installiert",
+                        "Starten Sie den Computer bei Gelegenheit neu, damit alles wirksam wird."],
+                       capture_output=True, text=True)
+    if r.stdout.strip() == "reboot":
+        subprocess.Popen(["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logoutAndReboot"])
+
+
 def remind():
     """Sanfte Erinnerung: nur wenn Updates sich stauen oder Sicherheitsupdates warten."""
+    notify_result()
     pkgs = check_system()
     if not pkgs:
         return
@@ -240,6 +287,26 @@ def gui():
         @Property(bool, constant=True)
         def hasSnapshots(self): return bool(shutil.which("snapper"))
 
+        # ---- Automatische Updates
+        @Property(bool, notify=changed)
+        def autoEnabled(self): return auto_enabled()
+        @Property(str, notify=changed)
+        def autoLast(self):
+            last = read_json(AUTO_STATE, {}).get("last_ok")
+            if not last:
+                return ""
+            when = datetime.datetime.fromtimestamp(last)
+            days = (datetime.date.today() - when.date()).days
+            day = "heute" if days == 0 else "gestern" if days == 1 else f"am {when:%d.%m.%Y}"
+            return f"Zuletzt nach Updates gesehen: {day} um {when:%H:%M} Uhr"
+
+        @Slot(bool)
+        def setAuto(self, on):
+            p = QProcess(self)
+            p.finished.connect(lambda *_: self.changed.emit())
+            p.start("pkexec", [HELPER, "auto-enable", "on" if on else "off"])
+            self._auto_proc = p
+
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "org.kde.desktop")
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Updates")
@@ -257,5 +324,7 @@ def gui():
 if __name__ == "__main__":
     if "--check" in sys.argv:
         remind()
+    elif "--notify" in sys.argv:
+        notify_result()
     else:
         sys.exit(gui())

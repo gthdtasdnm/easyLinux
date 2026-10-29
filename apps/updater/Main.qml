@@ -108,6 +108,40 @@ Kirigami.ApplicationWindow {
                 }
             }
 
+            // ---------- Automatische Updates
+            Kirigami.ListSectionHeader {
+                Layout.fillWidth: true
+                visible: st !== "updating"
+                text: "Automatische Updates"
+            }
+            RowLayout {
+                visible: st !== "updating"
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.largeSpacing
+                spacing: Kirigami.Units.largeSpacing
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
+                        text: "Updates automatisch installieren, wenn der Computer gerade nicht benutzt wird"
+                    }
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
+                        opacity: 0.7
+                        font: Kirigami.Theme.smallFont
+                        text: "Höchstens einmal am Tag, während der Bildschirm gesperrt ist – nicht im Akkubetrieb und nicht über mobile Daten. "
+                            + "Der Computer wird nie von selbst neu gestartet."
+                            + (backend.autoEnabled && backend.autoLast ? "\n" + backend.autoLast : "")
+                    }
+                }
+                QQC2.Switch {
+                    checked: backend.autoEnabled
+                    onToggled: backend.setAuto(checked)
+                }
+            }
+
             // ---------- Liste
             Kirigami.ListSectionHeader {
                 Layout.fillWidth: true

@@ -11,7 +11,7 @@ Sprache im Projekt: **Deutsch** (Code-Kommentare, Oberfläche, Commits). Nutzer 
 | `apps/taskmanager/` | Taskmanager (Tabs wie Win 11) **und** Strg+Alt+Entf-Bildschirm `SessionMenu.qml` (Layer-Shell, deckend, ohne Animation) – ein vorgeladener Prozess (`easylinux-taskmanager.service`) |
 | `apps/emergency/` | Notfall-Dienst (root, liest Tastatur per evdev) + Textmenü auf Konsole 9, falls die Oberfläche hängt |
 | `apps/settings/` | Einstellungen wie Win 11 in einem Fenster. Einträge/Suche: `settings_entries.py`. Eigene Seiten: `page:display` (`DisplayPage.qml`+`display.py`), `page:snapassist` (`SnapAssistPage.qml`+`snapassist.py`), `page:developer` (eigene Dienste: `DeveloperPage.qml`+`developer.py`, Suche in `easylinux/myservices.py`), `page:installed`. Gemeinsame Karte: `Card.qml`. `kcmhost/` = C++-Brücke, bettet KDE-KCMs ein |
-| `apps/updater/`, `apps/security/` | Update-Manager bzw. Sicherheit-App; root-Teil jeweils `helper.py` über pkexec/Polkit |
+| `apps/updater/`, `apps/security/` | Update-Manager bzw. Sicherheit-App; root-Teil jeweils `helper.py` über pkexec/Polkit. Automatische Updates: System-Timer `easylinux-autoupdate` → `helper.py auto-update` (nur bei gesperrtem Bildschirm, am Netzteil, nicht getaktet; Zustand in `/var/lib/easylinux/autoupdate*.json`), Neustart-Hinweis über User-Unit `easylinux-update-notify.path` |
 | `apps/openfile/` | Doppelklick-Installation (.AppImage, .flatpakref, .pkg.tar.zst, .deb/.rpm-Hinweis) |
 | `apps/taskbarmenu/` | C++-Plasma-Plugin: Rechtsklickmenü der Leiste |
 | `apps/installer/` | grafischer Installer (C++/QML, eine Datei). `install-root.sh` trägt Paketquelle `[easylinux]` in `/etc/pacman.conf` ein, `remove-root.sh` entfernt alles |

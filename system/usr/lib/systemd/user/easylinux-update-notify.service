@@ -1,0 +1,6 @@
+[Unit]
+Description=easyLinux: nach einem automatischen Update ggf. Bescheid geben
+
+[Service]
+Type=oneshot
+ExecStart=/opt/easylinux/bin/easylinux-updater --notify
