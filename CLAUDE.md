@@ -28,6 +28,7 @@ Installiert liegt alles unter `/opt/easylinux` (Programme) bzw. direkt im System
 ## Arbeitsweise
 
 - **Nur in der VM testen**, nie ungefragt auf dem Host installieren. VM: `tools/vm/login` (bootet nicht selbst – vorher `virsh -c qemu:///session start boxes-unknown-2`).
+- Nutzer testet neue Stände auf dem Host ohne Installation: `tools/testen <app>` (startet aus dem Quellordner).
 - Kleine Änderungen: `tools/vm/deploy` (spielt apps/bin/data/lib/user nach /opt/easylinux, startet Dienste neu) – **keine** Neuinstallation.
 - Gast-Shell ist **fish**: Befehle über `tools/vm/vsess '…'` bzw. Skriptdatei + `bash datei`. Kein `x=y`, kein `$?`.
 - `tools/vm/vm shot` liefert manchmal ein **veraltetes Bild** → vorher `tools/vm/vm click` in eine leere Ecke, oder Zustand per KWin-Skript abfragen.

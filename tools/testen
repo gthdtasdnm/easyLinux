@@ -1,0 +1,35 @@
+#!/bin/bash
+# Neue Version einer App direkt aus diesem Ordner starten, ohne zu installieren.
+# Die installierte Version (/opt/easylinux) bleibt unverändert.
+#
+#   tools/testen taskmanager | schnellmenue | einstellungen | fotos [Bild] | medienplayer [Video] | updates | sicherheit
+#   tools/testen zurueck      → wieder die installierte Version des Taskmanagers verwenden
+set -e
+dir="$(cd "$(dirname "$0")/.." && pwd)"
+export QSG_RENDER_LOOP="${QSG_RENDER_LOOP:-basic}"
+
+# Läuft die installierte Version schon, würde der Start nur deren Fenster nach vorne holen
+stop_installed() { pkill -f "/opt/easylinux/apps/$1/main.py" 2>/dev/null || true; sleep 0.5; }
+
+what="$1"; shift || true
+case "$what" in
+    taskmanager)
+        systemctl --user stop easylinux-taskmanager.service
+        stop_installed taskmanager
+        echo "Neuer Taskmanager läuft, auch für Strg+Alt+Entf. Win+X ersetzt im Test: tools/testen schnellmenue"
+        echo "Zurück zur installierten Version: tools/testen zurueck"
+        exec python3 "$dir/apps/taskmanager/main.py" "$@" ;;
+    einstellungen) stop_installed settings;  exec python3 "$dir/apps/settings/main.py" "$@" ;;
+    fotos)         stop_installed photos;    exec python3 "$dir/apps/photos/main.py" "$@" ;;
+    medienplayer)  stop_installed mediaplayer; exec python3 "$dir/apps/mediaplayer/main.py" "$@" ;;
+    updates)       stop_installed updater;   exec python3 "$dir/apps/updater/main.py" "$@" ;;
+    sicherheit)    stop_installed security;  exec python3 "$dir/apps/security/main.py" "$@" ;;
+    zurueck)
+        pkill -f "$dir/apps/taskmanager/main.py" 2>/dev/null || true
+        systemctl --user start easylinux-taskmanager.service
+        echo "Installierter Taskmanager läuft wieder." ;;
+    schnellmenue)  exec python3 "$dir/apps/taskmanager/main.py" --quick-menu ;;
+    *)
+        sed -n '2,7p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+        exit 1 ;;
+esac
