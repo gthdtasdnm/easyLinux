@@ -52,9 +52,12 @@ case "${1:-}" in
         wait_for_desktop || exit 1
         apply ;;
     *)
-        [ "$(cat "$MARKER" 2>/dev/null)" = "$VERSION" ] && exit 0
+        previous="$(cat "$MARKER" 2>/dev/null)"
+        [ "$previous" = "$VERSION" ] && exit 0
         wait_for_desktop || exit 1
         apply || true
+        # Nach einem Update ist nichts weiter zu tun – nur bei der Ersteinrichtung ums Abmelden bitten
+        [ -n "$previous" ] && exit 0
         # Tastenkürzel neuer Programme greifen erst nach dem nächsten Anmelden
         action="$(notify-send -a easyLinux -i preferences-system -A logout="Jetzt abmelden" -t 0 \
             "easyLinux ist eingerichtet" \
