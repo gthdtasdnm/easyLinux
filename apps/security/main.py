@@ -3,6 +3,7 @@
 Virenschutz (ClamAV, nur auf Wunsch eingerichtet, prüft auf Knopfdruck – kein Dauerscanner),
 Firewall, Updates/Sicherheitslücken, Sicherungspunkte und Bildschirmsperre.
 """
+import datetime
 import json
 import os
 import shutil
@@ -45,10 +46,10 @@ def save_state(data):
 def date_text(ts):
     if not ts:
         return "noch nie"
-    days = (time.time() - ts) / 86400
-    if days < 1:
+    days = (datetime.date.today() - datetime.date.fromtimestamp(ts)).days  # Kalendertage
+    if days <= 0:
         return "heute, " + time.strftime("%H:%M", time.localtime(ts))
-    if days < 2:
+    if days == 1:
         return "gestern"
     return time.strftime("%d.%m.%Y", time.localtime(ts))
 
@@ -120,6 +121,8 @@ class Backend(QObject):
                 checks.update(json.loads(r.stdout.strip().splitlines()[-1]))
             except (ValueError, IndexError):
                 checks.update(firewall=None, snapshots=None)
+            # Erst alles Schnelle zeigen – die Update-Prüfung lädt aus dem Internet und dauert oft eine Minute
+            QTimer.singleShot(0, self, lambda: self._loaded(dict(checks)))
             checks["updates"], checks["vulns"] = check_updates()
             QTimer.singleShot(0, self, lambda: self._loaded(checks))
         threading.Thread(target=work, daemon=True).start()
@@ -171,7 +174,10 @@ class Backend(QObject):
                               text="Unerwünschte Zugriffe aus dem Netzwerk werden blockiert.", action="", target=""))
         # Updates
         n, v = c.get("updates", -1), c.get("vulns", -1)
-        if n < 0:
+        if "updates" not in c:
+            tiles.append(dict(key="updates", title="Updates", icon="security-medium", level=0, status="Wird geprüft …",
+                              text="Es wird nachgesehen, ob neue Updates bereitstehen.", action="", target=""))
+        elif n < 0:
             tiles.append(dict(key="updates", title="Updates", icon="security-medium", level=1, status="Unbekannt",
                               text="Es konnte nicht geprüft werden, ob Updates vorliegen. Besteht eine Internetverbindung?",
                               action="Update-Manager öffnen", target="app:easylinux-updater"))

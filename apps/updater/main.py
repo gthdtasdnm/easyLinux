@@ -6,6 +6,7 @@
   easylinux-updater --notify  nach einem automatischen Update ggf. einmal Bescheid geben
 """
 import datetime
+import glob
 import json
 import os
 import re
@@ -281,11 +282,14 @@ def gui():
             last = last_full_update()
             if not last:
                 return "Noch kein Update durchgeführt"
-            days = (datetime.datetime.now() - last).days
+            days = (datetime.date.today() - last.date()).days  # Kalendertage, nicht 24-Stunden-Abschnitte
             when = "heute" if days == 0 else "gestern" if days == 1 else f"vor {days} Tagen"
             return f"Letztes Update: {when} ({last:%d.%m.%Y})"
         @Property(bool, constant=True)
-        def hasSnapshots(self): return bool(shutil.which("snapper"))
+        def hasSnapshots(self):
+            # Nur versprechen, was passiert: Snapper muss eingerichtet sein und snap-pac die Punkte bei Updates anlegen
+            return bool(shutil.which("snapper")) and os.path.exists("/etc/snapper/configs/root") and \
+                bool(glob.glob("/usr/share/libalpm/hooks/*snap-pac*"))
 
         # ---- Automatische Updates
         @Property(bool, notify=changed)

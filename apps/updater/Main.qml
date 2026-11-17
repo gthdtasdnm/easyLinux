@@ -13,6 +13,7 @@ Kirigami.ApplicationWindow {
     visible: true
 
     readonly property string st: backend.state
+    property bool showPackages: false
 
     pageStack.initialPage: Kirigami.ScrollablePage {
         title: "Updates"
@@ -148,8 +149,32 @@ Kirigami.ApplicationWindow {
                 visible: st === "available" && backend.systemCount > 0
                 text: "System (" + backend.systemCount + ") – wird immer vollständig aktualisiert"
             }
+            // Wie Windows: ein zusammengefasster Eintrag, die einzelnen Pakete erst auf Wunsch
+            RowLayout {
+                visible: st === "available" && backend.systemCount > 0
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.largeSpacing
+                Kirigami.Icon { source: "system-software-update"; Layout.preferredWidth: Kirigami.Units.iconSizes.medium; Layout.preferredHeight: Layout.preferredWidth }
+                ColumnLayout {
+                    spacing: 0
+                    Layout.fillWidth: true
+                    QQC2.Label { text: "Systemupdate (Betriebssystem, Treiber und Programme)"; Layout.fillWidth: true; elide: Text.ElideRight }
+                    QQC2.Label {
+                        readonly property int sec: backend.systemPackages.filter(p => p.security).length
+                        text: backend.systemCount + " Pakete" + (sec > 0 ? " · davon " + sec + " Sicherheitsupdate" + (sec > 1 ? "s" : "") : "")
+                        color: sec > 0 ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
+                        opacity: sec > 0 ? 1 : 0.7
+                        font: Kirigami.Theme.smallFont
+                    }
+                }
+                QQC2.Button {
+                    text: root.showPackages ? "Details ausblenden" : "Details anzeigen"
+                    flat: true
+                    onClicked: root.showPackages = !root.showPackages
+                }
+            }
             Repeater {
-                model: st === "available" ? backend.systemPackages : []
+                model: st === "available" && root.showPackages ? backend.systemPackages : []
                 delegate: RowLayout {
                     required property var modelData
                     Layout.fillWidth: true
