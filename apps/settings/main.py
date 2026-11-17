@@ -23,10 +23,12 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from easylinux import desktop, single
+from clock import DateTime
 from developer import Developer
+from network import Network
 from display import Display
 from snapassist import SnapAssist
-from settings_entries import CATEGORIES, ENTRIES
+from settings_entries import ALIASES, CATEGORIES, ENTRIES
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KCMHOST = os.path.join(HERE, "kcmhost", "libkcmhost.so")
@@ -180,8 +182,7 @@ class Backend(QObject):
     @Slot(str, result="QVariantMap")
     def entryFor(self, target):
         """Eintrag zu einem Ziel (z. B. „kcm_kscreen“) – für Aufrufe von außen."""
-        if target == "kcm_kscreen":  # „Anzeige einrichten“ von KDE → unsere Bildschirm-Seite
-            target = "page:display"
+        target = ALIASES.get(target, target)  # z. B. „Anzeige einrichten“ von KDE → unsere Bildschirm-Seite
         e = next((e for e in ENTRIES if e[4] == target and available(target)), None)
         return self._entry(e) if e else {}
 
@@ -233,11 +234,16 @@ class Backend(QObject):
         return {"title": e[1], "subtitle": e[2], "icon": e[3], "target": e[4], "category": cat, "categoryKey": e[0],
                 "external": opens_window(e[4])}
 
+    @Slot(str, result=bool)
+    def opensWindow(self, target):
+        return opens_window(target)
+
     @Slot(str)
     def open(self, target):
         """Ziele, die nicht im Fenster angezeigt werden: Programme, Aktionen, alte KCMs (eigenes Fenster)."""
         if target.startswith("kcm_"):
-            QProcess.startDetached("kcmshell6", [target])
+            # Voller Pfad: /usr/local/bin/kcmshell6 leitet zurück zu easyLinux (Endlosschleife)
+            QProcess.startDetached("/usr/bin/kcmshell6", [target])
         elif target == "action:panel-edit":
             QProcess.startDetached("qdbus6", ["org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.editMode", "true"])
         elif target.startswith("app:"):
@@ -330,6 +336,12 @@ def main():
     developer = Developer()
     developer.message.connect(backend.message)
     engine.rootContext().setContextProperty("developer", developer)
+    network = Network()
+    network.message.connect(backend.message)
+    engine.rootContext().setContextProperty("network", network)
+    clock = DateTime()
+    clock.message.connect(backend.message)
+    engine.rootContext().setContextProperty("clock", clock)
     engine.rootContext().setContextProperty("kcmHostAvailable", host)
     engine.rootContext().setContextProperty("startPage", page)
     engine.load(os.path.join(HERE, "Main.qml"))

@@ -14,7 +14,7 @@ Kirigami.ApplicationWindow {
     visible: true
 
     property string category: "system"
-    property string view: "category"          // category | kcm | installed | display | snapassist | developer
+    property string view: "category"          // category | kcm | installed | display | snapassist | developer | network | datetime
     property var entry: null                  // geöffnete Einstellung (für die Überschrift)
     readonly property bool searching: searchField.text.trim().length > 0
     readonly property var categoryInfo: {
@@ -51,6 +51,10 @@ Kirigami.ApplicationWindow {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "display"; root.entry = e; display.refresh() })
         } else if (e.target === "page:snapassist") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "snapassist"; root.entry = e })
+        } else if (e.target === "page:network") {
+            leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "network"; root.entry = e; network.refresh() })
+        } else if (e.target === "page:datetime") {
+            leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "datetime"; root.entry = e; clock.refresh() })
         } else if (e.target === "page:developer") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "developer"; root.entry = e })
         } else if (e.target.startsWith("kcm_") && root.kcm) {
@@ -75,6 +79,14 @@ Kirigami.ApplicationWindow {
             openEntry(e)
         else if (target)
             showCategory(target)
+    }
+
+    // Aus eigenen Seiten heraus: alte KDE-Seiten im eigenen Fenster, alles andere hier im Fenster
+    function openFromPage(target) {
+        if (backend.opensWindow(target))
+            backend.open(target)
+        else
+            openTarget(target)
     }
 
     function goBack() {
@@ -307,6 +319,24 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     sourceComponent: SnapAssistPage {}
+                }
+
+                // ---- Netzwerk & Internet
+                Loader {
+                    active: !root.searching && root.view === "network"
+                    visible: active
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    sourceComponent: NetworkPage { onOpenTarget: (t) => root.openFromPage(t) }
+                }
+
+                // ---- Datum & Uhrzeit
+                Loader {
+                    active: !root.searching && root.view === "datetime"
+                    visible: active
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    sourceComponent: ClockPage { onOpenTarget: (t) => root.openFromPage(t) }
                 }
 
                 // ---- Für Entwickler: eigene Dienste

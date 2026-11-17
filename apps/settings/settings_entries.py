@@ -21,6 +21,13 @@ CATEGORIES = [
     ("update", "Update", "system-software-update", "Updates und Sicherungspunkte"),
 ]
 
+# KDE-Seiten, für die easyLinux eine eigene Seite hat (Aufrufe von außen, z. B. Rechtsklick auf die Uhr)
+ALIASES = {
+    "kcm_kscreen": "page:display",
+    "kcm_networkmanagement": "page:network",
+    "kcm_clock": "page:datetime",
+}
+
 # (Bereich, Titel, Beschreibung, Symbol, Ziel, Suchwörter)
 ENTRIES = [
     # ---------------- System (Reihenfolge wie Windows 11)
@@ -82,8 +89,11 @@ ENTRIES = [
     ("devices", "Smartphone", "Handy verbinden: Dateien, Benachrichtigungen (KDE Connect)", "kdeconnect",
      "kcm_kdeconnect", "handy smartphone android iphone verbinden kde connect"),
     # ---------------- Netzwerk & Internet
-    ("network", "WLAN, Ethernet & VPN", "Verbindungen, WLAN-Passwörter, VPN", "network-wireless",
-     "kcm_networkmanagement", "wifi wlan internet verbindung kabel lan ethernet vpn hotspot passwort"),
+    ("network", "WLAN, Ethernet & VPN", "Verbindungsstatus, WLAN-Netze, VPN, Flugzeugmodus", "network-wireless",
+     "page:network", "wifi wlan internet verbindung kabel lan ethernet vpn hotspot passwort ip adresse "
+     "flugzeugmodus netzwerk verbinden trennen eigenschaften dns mac"),
+    ("network", "Netzwerkverbindungen bearbeiten", "Feste IP-Adresse, VPN hinzufügen, Hotspot (für Fortgeschrittene)",
+     "preferences-system-network", "kcm_networkmanagement", "ip adresse statisch fest vpn hinzufügen hotspot dns"),
     ("network", "Proxy", "Proxy-Server einstellen", "preferences-system-network-proxy",
      "kcm_proxy", "proxy firma netzwerk"),
     ("network", "Erweiterte Netzwerkeinstellungen", "Zeitüberschreitungen und Verbindungsdetails", "preferences-system-network",
@@ -135,7 +145,7 @@ ENTRIES = [
      "kcm_kwallet5", "passwort wallet geldbörse"),
     # ---------------- Zeit & Sprache
     ("time", "Datum & Uhrzeit", "Zeitzone, Uhrzeit automatisch stellen", "preferences-system-time",
-     "kcm_clock", "zeit uhr datum zeitzone"),
+     "page:datetime", "zeit uhr datum zeitzone uhrzeit stellen synchronisieren ntp falsch"),
     ("time", "Sprache & Region", "Sprache, Zahlen- und Datumsformat", "preferences-desktop-locale",
      "kcm_regionandlang", "sprache deutsch englisch region format währung"),
     ("time", "Eingabe", "Tastaturlayouts und Sprachen wechseln", "input-keyboard",
