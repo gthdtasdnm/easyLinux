@@ -43,13 +43,15 @@ function setupTasks(tasks, launchers) {
 }
 
 // Hauptleiste: Start, Programme, Infobereich, Uhr, Desktop anzeigen.
-function addMainPanel(screen, launchers) {
+// centered: Start und Programme in der Mitte wie bei Windows 11 (dehnbare Platzhalter links und rechts davon).
+function addMainPanel(screen, launchers, centered) {
     var p = new Panel;
     if (p.screen !== screen) p.screen = screen;
     windowsStyle(p);
+    if (centered) p.addWidget("org.kde.plasma.panelspacer");
     setupKickoff(p.addWidget("org.kde.plasma.kickoff"));
     setupTasks(p.addWidget("org.kde.plasma.icontasks"), launchers);
-    p.addWidget("org.kde.plasma.marginsseparator");
+    p.addWidget(centered ? "org.kde.plasma.panelspacer" : "org.kde.plasma.marginsseparator");
     p.addWidget("org.kde.plasma.systemtray");
     p.addWidget("org.kde.plasma.digitalclock");
     p.addWidget("org.kde.plasma.showdesktop");
@@ -57,13 +59,14 @@ function addMainPanel(screen, launchers) {
 }
 
 // Leiste auf weiteren Bildschirmen wie bei Windows 11: Start, Programme, Uhr – ohne Infobereich.
-function addSecondaryPanel(screen, launchers) {
+function addSecondaryPanel(screen, launchers, centered) {
     var p = new Panel;
     p.screen = screen;
     windowsStyle(p);
+    if (centered) p.addWidget("org.kde.plasma.panelspacer");
     setupKickoff(p.addWidget("org.kde.plasma.kickoff"));
     setupTasks(p.addWidget("org.kde.plasma.icontasks"), launchers);
-    p.addWidget("org.kde.plasma.marginsseparator");
+    p.addWidget(centered ? "org.kde.plasma.panelspacer" : "org.kde.plasma.marginsseparator");
     p.addWidget("org.kde.plasma.digitalclock");
     p.addWidget("org.kde.plasma.showdesktop");
     return p;
@@ -74,13 +77,15 @@ var bars = panels().filter(function (p) { return p.location === "bottom"; });
 if (RESET) {
     panels().forEach(function (p) { if (p.screen === 0) p.remove(); });
     bars = panels().filter(function (p) { return p.location === "bottom"; });
-    addMainPanel(0, DEFAULT_LAUNCHERS);
+    addMainPanel(0, DEFAULT_LAUNCHERS, true);
 }
 
 // Angeheftete Apps der Hauptleiste übernehmen, damit alle Leisten gleich aussehen.
 var launchers = DEFAULT_LAUNCHERS;
+var centered = true;
 var main = panels().filter(function (p) { return p.screen === 0 && p.location === "bottom"; })[0];
 if (main) {
+    centered = main.widgets("org.kde.plasma.panelspacer").length >= 2;
     var mt = findWidget(main, "org.kde.plasma.icontasks");
     if (mt) {
         mt.currentConfigGroup = ["General"];
@@ -102,7 +107,7 @@ var created = [];
 for (var s = 0; s < screenCount; s++) {
     var has = panels().some(function (p) { return p.screen === s; });
     if (has) continue;
-    if (s === 0) addMainPanel(0, launchers); else addSecondaryPanel(s, launchers);
+    if (s === 0) addMainPanel(0, launchers, centered); else addSecondaryPanel(s, launchers, centered);
     created.push(s);
 }
 print("easylinux-layout: neu auf Bildschirm " + created.join(",") + "\n");

@@ -53,6 +53,8 @@ Kirigami.ApplicationWindow {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "snapassist"; root.entry = e })
         } else if (e.target === "page:network") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "network"; root.entry = e; network.refresh() })
+        } else if (e.target === "page:taskbar") {
+            leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "taskbar"; root.entry = e })
         } else if (e.target === "page:datetime") {
             leaveKcm(() => { searchField.text = ""; root.category = e.categoryKey; root.view = "datetime"; root.entry = e; clock.refresh() })
         } else if (e.target === "page:developer") {
@@ -328,6 +330,15 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     sourceComponent: NetworkPage { onOpenTarget: (t) => root.openFromPage(t) }
+                }
+
+                // ---- Taskleiste
+                Loader {
+                    active: !root.searching && root.view === "taskbar"
+                    visible: active
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    sourceComponent: TaskbarPage {}
                 }
 
                 // ---- Datum & Uhrzeit

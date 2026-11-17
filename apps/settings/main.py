@@ -26,6 +26,7 @@ from easylinux import desktop, single
 from clock import DateTime
 from developer import Developer
 from network import Network
+from taskbar import Taskbar
 from display import Display
 from snapassist import SnapAssist
 from settings_entries import ALIASES, CATEGORIES, ENTRIES
@@ -339,6 +340,9 @@ def main():
     network = Network()
     network.message.connect(backend.message)
     engine.rootContext().setContextProperty("network", network)
+    taskbar = Taskbar()
+    taskbar.message.connect(backend.message)
+    engine.rootContext().setContextProperty("taskbar", taskbar)
     clock = DateTime()
     clock.message.connect(backend.message)
     engine.rootContext().setContextProperty("clock", clock)

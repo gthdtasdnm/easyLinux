@@ -113,8 +113,9 @@ ENTRIES = [
      "kcm_virtualkeyboard", "virtuelle tastatur touch texteingabe"),
     ("personal", "Start", "Startmenü bearbeiten", "kmenuedit",
      "app:org.kde.kmenuedit", "startmenü start menü einträge bearbeiten"),
-    ("personal", "Taskleiste", "Leiste bearbeiten: Größe, Position, Elemente", "configure-toolbars",
-     "action:panel-edit", "taskleiste leiste panel unten symbole angeheftet"),
+    ("personal", "Taskleiste", "Ausrichtung, automatisch ausblenden, mehrere Bildschirme", "configure",
+     "page:taskbar", "taskleiste leiste panel zentriert mitte links ausblenden automatisch zweiter bildschirm monitor "
+     "gruppieren zusammenfassen sekunden uhr startknopf"),
     ("personal", "Schriftarten", "Schriftgröße und -art", "preferences-desktop-font",
      "kcm_fonts", "schrift text größe font lesbar"),
     ("personal", "Symbole", "Symbol-Design", "preferences-desktop-icons",
