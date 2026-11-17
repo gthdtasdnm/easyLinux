@@ -21,7 +21,7 @@ if $reset; then
         "org.kde.ActivityManager.ResourcesLinking.$1" org.kde.plasma.favorites.applications "$2" :global >/dev/null 2>&1 || true; }
     fav UnlinkResourceFromActivity applications:systemsettings.desktop
     for app in easylinux-settings org.kde.dolphin easylinux-photos easylinux-mediaplayer org.kde.kcalc cachyos-pi; do
-        [ -e "/usr/share/applications/$app.desktop" ] && fav LinkResourceToActivity "applications:$app.desktop"
+        if [ -e "/usr/share/applications/$app.desktop" ]; then fav LinkResourceToActivity "applications:$app.desktop"; fi
     done
 fi
 ok "Taskleiste und Startmenü eingerichtet"
