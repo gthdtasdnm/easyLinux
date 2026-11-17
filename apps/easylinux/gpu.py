@@ -75,9 +75,10 @@ class GpuMonitor:
 
     # ------------------------------------------------------------ Steuerung
     def start(self):
+        # Zuerst zurücksetzen: läuft der Thread nach stop() noch (wartet gerade), misst er einfach weiter
+        self._stop.clear()
         if self._thread and self._thread.is_alive():
             return
-        self._stop.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
