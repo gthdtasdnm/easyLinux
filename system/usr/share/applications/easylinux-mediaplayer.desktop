@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Medienplayer
+GenericName=Videos und Musik abspielen
+Comment=Videos und Musik abspielen
+Exec=/opt/easylinux/bin/easylinux-mediaplayer %U
+Icon=multimedia-player
+Categories=AudioVideo;Player;Video;Audio;
+MimeType=video/mp4;video/x-matroska;video/webm;video/x-msvideo;video/quicktime;video/mpeg;video/x-ms-wmv;video/x-flv;video/ogg;video/3gpp;video/mp2t;audio/mpeg;audio/mp4;audio/flac;audio/ogg;audio/x-wav;audio/wav;audio/x-vorbis+ogg;audio/opus;audio/aac;audio/x-ms-wma;audio/x-aiff;audio/x-matroska;
+Keywords=Video;Film;Musik;Audio;Abspielen;Player;MP4;MP3;

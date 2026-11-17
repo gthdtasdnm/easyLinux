@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Fotos
+GenericName=Bilder ansehen
+Comment=Fotos und Bilder ansehen, durchblättern, zoomen und drehen
+Exec=/opt/easylinux/bin/easylinux-photos %f
+Icon=image-x-generic
+Categories=Graphics;Viewer;
+MimeType=image/jpeg;image/png;image/gif;image/webp;image/bmp;image/tiff;image/svg+xml;image/avif;image/heif;image/jxl;image/x-icon;image/x-portable-pixmap;image/x-tga;
+Keywords=Bild;Foto;Bilder;Fotos;Ansehen;Bildbetrachter;Diashow;
