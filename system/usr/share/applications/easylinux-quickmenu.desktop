@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Schnellmenü
+Comment=Installierte Apps, Energieoptionen, Terminal, Task-Manager, Herunterfahren (Win+X)
+Exec=/opt/easylinux/bin/easylinux-taskmanager --quick-menu
+Icon=start-here
+NoDisplay=true

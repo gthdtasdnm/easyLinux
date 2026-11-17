@@ -4,7 +4,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/../../lib/common.sh"
 
 # Tastenkürzel wie bei Windows: Strg+Umschalt+Esc → Taskmanager, Strg+Alt+Entf → Sicherheitsoptionen,
-# Win+I → Einstellungen, Win+Tab → Aufgabenansicht.
+# Win+I → Einstellungen, Win+X → Schnellmenü, Win+Tab → Aufgabenansicht.
 shortcut="$EASYLINUX_OPT/bin/easylinux-shortcut"
 "$shortcut" launch easylinux-taskmanager.desktop Taskmanager Ctrl+Shift+Esc >/dev/null
 "$shortcut" clear ksmserver "Log Out" >/dev/null
@@ -12,6 +12,8 @@ shortcut="$EASYLINUX_OPT/bin/easylinux-shortcut"
 # Win+I öffnet die Einstellungen (vorher: KDE-Systemeinstellungen)
 "$shortcut" clear systemsettings.desktop _launch >/dev/null
 "$shortcut" launch easylinux-settings.desktop Einstellungen Meta+I >/dev/null
+# Win+X = Schnellmenü (wie Rechtsklick auf Start)
+"$shortcut" launch easylinux-quickmenu.desktop Schnellmenü Meta+X >/dev/null
 # Win+Tab = Aufgabenansicht (Übersicht aller Fenster), Alt+Tab bleibt Fensterwechsel
 "$shortcut" set kwin "Walk Through Windows" Alt+Tab >/dev/null
 "$shortcut" set kwin Overview Meta+W Meta+Tab >/dev/null

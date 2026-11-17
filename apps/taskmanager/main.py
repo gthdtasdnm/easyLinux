@@ -6,6 +6,7 @@ auch unter hoher Last ohne Startverzögerung erscheint.
 """
 import os
 import pwd
+import shutil
 import signal
 import subprocess
 import sys
@@ -31,6 +32,30 @@ SESSION_ACTIONS = {
     "logout": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logout"],
     "reboot": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logoutAndReboot"],
     "shutdown": ["qdbus6", "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logoutAndShutdown"],
+}
+
+SETTINGS = "/opt/easylinux/bin/easylinux-settings"
+KRUNNER = ["qdbus6", "org.kde.krunner", "/App", "org.kde.krunner.App.display"]
+# Schnellmenü (Win+X) – wie apps/taskbarmenu (Rechtsklick auf den Startknopf)
+QUICK_ACTIONS = {
+    "installed": [SETTINGS, "installed"],
+    "power": [SETTINGS, "kcm_powerdevilprofilesconfig"],
+    "system": [SETTINGS, "kcm_about-distro"],
+    "devices": ["kinfocenter"],
+    "network": [SETTINGS, "page:network"],
+    "disks": ["partitionmanager"],
+    "terminal": ["konsole"],
+    "terminal-admin": ["sh", "-c", "if command -v run0 >/dev/null; then exec konsole -e run0; else exec konsole -e sudo -i; fi"],
+    "settings": [SETTINGS],
+    "explorer": ["dolphin"],
+    "search": KRUNNER,
+    "run": KRUNNER,
+    "lock": SESSION_ACTIONS["lock"],
+    "logout": SESSION_ACTIONS["logout"],
+    "reboot": SESSION_ACTIONS["reboot"],
+    "shutdown": SESSION_ACTIONS["shutdown"],
+    "desktop": ["qdbus6", "org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut",
+                "Show Desktop"],
 }
 
 
@@ -527,6 +552,13 @@ class Backend(QObject):
         if command and not QProcess.startDetached("sh", ["-c", command]):
             self.message.emit(f"„{command}“ konnte nicht gestartet werden.")
 
+    @Slot(str, result=bool)
+    def quickAvailable(self, action):
+        if action == "taskmanager":
+            return True
+        cmd = QUICK_ACTIONS.get(action)
+        return bool(cmd) and (cmd[0].startswith("/") and os.path.exists(cmd[0]) or bool(shutil.which(cmd[0])))
+
     @Slot(str)
     def openKcm(self, name):
         # In den easyLinux-Einstellungen öffnen (gleiches Fenster wie alle anderen Einstellungen)
@@ -535,7 +567,7 @@ class Backend(QObject):
 
 def main():
     background = "--background" in sys.argv
-    request = b"session" if "--session-menu" in sys.argv else b"show"
+    request = b"session" if "--session-menu" in sys.argv else b"quick" if "--quick-menu" in sys.argv else b"show"
     if single.notify_running(NAME, request):
         return 0
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "org.kde.desktop")
@@ -550,9 +582,10 @@ def main():
     engine.rootContext().setContextProperty("backend", backend)
     engine.load(os.path.join(HERE, "Main.qml"))
     engine.load(os.path.join(HERE, "SessionMenu.qml"))
-    if len(engine.rootObjects()) < 2:
+    engine.load(os.path.join(HERE, "QuickMenu.qml"))
+    if len(engine.rootObjects()) < 3:
         return 1
-    window, menu = engine.rootObjects()
+    window, menu, quick = engine.rootObjects()
 
     def show():
         window.setProperty("visible", True)
@@ -566,7 +599,16 @@ def main():
         elif action in SESSION_ACTIONS:
             QProcess.startDetached(SESSION_ACTIONS[action][0], SESSION_ACTIONS[action][1:])
 
+    def on_quick(action):
+        if action == "taskmanager":
+            show()
+        elif action in QUICK_ACTIONS:
+            QProcess.startDetached(QUICK_ACTIONS[action][0], QUICK_ACTIONS[action][1:])
+
     def on_message(msg):
+        if msg == "quick":
+            quick.close() if quick.isVisible() else quick.open()  # Win+X erneut = schließen
+            return
         if msg == "session":
             # Quittung für den Notfall-Dienst: die Oberfläche reagiert noch.
             with open(ACK, "w") as fh:
@@ -582,6 +624,7 @@ def main():
                 fh.write("closed")
 
     menu.actionChosen.connect(on_action)
+    quick.actionChosen.connect(on_quick)
     menu.visibleChanged.connect(on_menu_visible)
     server = single.listen(NAME, on_message)  # noqa: F841 – muss am Leben bleiben
 
