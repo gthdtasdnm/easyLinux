@@ -5,7 +5,9 @@ Derselbe Prozess zeigt auch den Strg+Alt+Entf-Bildschirm (--session-menu), damit
 auch unter hoher Last ohne Startverzögerung erscheint.
 """
 import os
+import pwd
 import signal
+import subprocess
 import sys
 import threading
 
@@ -15,7 +17,7 @@ from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QProcess, Q
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
-from easylinux import autostart, gpu, netproc, procapps, services, single, sysperf
+from easylinux import apphistory, autostart, gpu, netproc, procapps, services, single, sysperf
 
 NAME = "easylinux-taskmanager"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -82,6 +84,10 @@ class Backend(QObject):
                                      "count", "efficient", "child", "pid", "expanded"], "key")
         self.proc_model = DictModel(["pid", "name", "status", "user", "cpu", "cpuText", "memory",
                                      "memoryText", "command", "nice", "own"], "pid")
+        self.history_model = DictModel(["key", "name", "iconName", "cpu", "cpuText", "disk", "diskText",
+                                        "net", "netText"], "key")
+        self.users_model = DictModel(["uid", "name", "fullName", "cpu", "cpuText", "memory", "memoryText",
+                                      "count", "status"], "uid")
         self.service_model = DictModel(["unit", "name", "description", "status", "running", "failed",
                                         "startup"], "unit")
         self.monitor = procapps.Monitor()
@@ -98,7 +104,15 @@ class Backend(QObject):
         self._page = "processes"
         self._filter = ""
         self._pid_filter = []
-        self._sort = {"processes": ("name", False), "details": ("name", False), "services": ("name", False)}
+        self._sort = {"processes": ("name", False), "details": ("name", False), "services": ("name", False),
+                      "history": ("cpu", True), "users": ("name", False)}
+        # App-Verlauf: läuft immer (auch bei verstecktem Fenster), einmal pro Minute – nur Zähler lesen
+        self.history = apphistory.AppHistory()
+        self.history_monitor = procapps.Monitor()  # eigener Monitor, damit die Live-Werte nicht gestört werden
+        self.history_timer = QTimer(interval=60000)
+        self.history_timer.timeout.connect(self._sample_history)
+        self.history_timer.start()
+        QTimer.singleShot(5000, self._sample_history)
         self.timer = QTimer(interval=1500)
         self.timer.timeout.connect(self.refresh)
 
@@ -126,6 +140,9 @@ class Backend(QObject):
         elif self._page == "details":
             self._procs = self.table.update()
             self._show_procs()
+        elif self._page == "users":
+            self._procs = self.table.update()
+            self._show_users()
         self.statsChanged.emit()
         self.perfChanged.emit()
 
@@ -143,9 +160,12 @@ class Backend(QObject):
     @Slot(str)
     def setPage(self, page):
         self._page = page
+        self.sortChanged.emit()  # Sortierpfeil der neuen Seite zeigen
         self._pid_filter = [] if page != "details" else self._pid_filter
         if page == "autostart":
             self.loadAutostart()
+        elif page == "history":
+            self._show_history()
         elif page == "services":
             self.loadServices()
         if self.timer.isActive():
@@ -167,6 +187,8 @@ class Backend(QObject):
         self._show_apps()
         self._show_procs()
         self._show_services()
+        self._show_history()
+        self._show_users()
 
     @Property(str, notify=sortChanged)
     def sortColumn(self):
@@ -387,6 +409,77 @@ class Backend(QObject):
             ok_text if code == 0 else "Abgebrochen." if code in (126, 127) else "Das hat nicht geklappt."))
         proc.start("pkexec", cmd)
         self._admin = proc
+
+    # ------------------------------------------------------------ App-Verlauf
+    historyChanged = Signal()
+
+    def _sample_history(self):
+        try:
+            self.history.sample(self.history_monitor)
+        except OSError:
+            return
+        if self._page == "history":
+            self._show_history()
+
+    def _show_history(self):
+        rows = [{"key": r["key"], "name": r.get("name", r["key"]), "iconName": r.get("icon", ""),
+                 "cpu": r["cpu"], "cpuText": apphistory.cpu_time_text(r["cpu"]),
+                 "disk": float(r["disk"]), "diskText": procapps.human_bytes(r["disk"]),
+                 "net": float(r["net"]), "netText": procapps.human_bytes(r["net"])}
+                for r in self.history.rows()
+                if not self._filter or self._filter in r.get("name", "").lower()]
+        self.history_model.set_rows(self._sorted("history", rows) if rows else [])
+        self.historyChanged.emit()
+
+    @Property(QObject, constant=True)
+    def appHistory(self):
+        return self.history_model
+
+    @Property(str, notify=historyChanged)
+    def historySince(self):
+        import datetime
+        return datetime.datetime.fromtimestamp(self.history.data["since"]).strftime("%d.%m.%Y")
+
+    @Slot()
+    def clearHistory(self):
+        self.history.clear()
+        self._show_history()
+        self.message.emit("Der App-Verlauf wurde gelöscht.")
+
+    # ------------------------------------------------------------ Benutzer
+    def _show_users(self):
+        # Angemeldete Benutzer: Sitzungen der Klasse „user“ (SESSION UID USER SEAT LEADER CLASS …)
+        sessions = {os.getuid(): "Aktiv"}
+        try:
+            out = subprocess.run(["loginctl", "list-sessions", "--no-legend"], capture_output=True, text=True,
+                                 timeout=3).stdout
+            for line in out.splitlines():
+                f = line.split()
+                if len(f) >= 6 and f[1].isdigit() and f[5] == "user":
+                    sessions.setdefault(int(f[1]), "Angemeldet")
+        except (OSError, subprocess.SubprocessError):
+            pass
+        rows = {}
+        for p in self._procs:
+            if p["uid"] not in sessions:
+                continue
+            r = rows.setdefault(p["uid"], {"uid": p["uid"], "name": p["user"], "cpu": 0.0, "memory": 0, "count": 0,
+                                           "status": sessions[p["uid"]]})
+            r["cpu"] += p["cpu"]
+            r["memory"] += p["memory"]
+            r["count"] += 1
+        for r in rows.values():
+            try:
+                r["fullName"] = pwd.getpwuid(r["uid"]).pw_gecos.split(",")[0] or r["name"]
+            except KeyError:
+                r["fullName"] = r["name"]
+            r["cpuText"], r["memoryText"] = pct(r["cpu"]), procapps.human_bytes(r["memory"])
+        rows = list(rows.values())
+        self.users_model.set_rows(self._sorted("users", rows) if rows else [])
+
+    @Property(QObject, constant=True)
+    def users(self):
+        return self.users_model
 
     # ------------------------------------------------------------ Dienste
     @Slot()

@@ -20,7 +20,9 @@ Kirigami.ApplicationWindow {
     readonly property var tabs: [
         { key: "processes", title: "Prozesse", icon: "view-list-details" },
         { key: "performance", title: "Leistung", icon: "office-chart-area" },
+        { key: "history", title: "App-Verlauf", icon: "view-history" },
         { key: "autostart", title: "Autostart-Apps", icon: "system-run" },
+        { key: "users", title: "Benutzer", icon: "system-users" },
         { key: "details", title: "Details", icon: "view-list-text" },
         { key: "services", title: "Dienste", icon: "preferences-system-services" }
     ]
@@ -86,7 +88,7 @@ Kirigami.ApplicationWindow {
                     Kirigami.Heading { level: 2; text: root.tabs[root.tab].title }
                     Kirigami.SearchField {
                         id: search
-                        visible: root.page !== "performance" && root.page !== "autostart"
+                        visible: root.page !== "performance" && root.page !== "autostart" && root.page !== "users"
                         Layout.fillWidth: true
                         Layout.maximumWidth: Kirigami.Units.gridUnit * 18
                         placeholderText: root.page === "details" ? "Name, PID oder Benutzer suchen …" : "Suchen …"
@@ -131,7 +133,9 @@ Kirigami.ApplicationWindow {
 
                     ProcessesPage { onDetailsRequested: root.showTab("details") }
                     PerformancePage {}
+                    HistoryPage {}
                     AutostartPage {}
+                    UsersPage {}
                     DetailsPage {}
                     ServicesPage {}
                 }
