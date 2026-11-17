@@ -7,10 +7,11 @@ Sprache im Projekt: **Deutsch** (Code-Kommentare, Oberfläche, Commits). Nutzer 
 
 | Pfad | Inhalt |
 |---|---|
-| `apps/easylinux/` | gemeinsame Python-Bausteine: `procapps` (Apps statt Prozesse über systemd-Gruppen), `desktop` (.desktop lesen), `single` (eine Instanz + Nachrichten), `services`, `sysperf`, `autostart` |
-| `apps/taskmanager/` | Taskmanager (Tabs wie Win 11) **und** Strg+Alt+Entf-Bildschirm `SessionMenu.qml` (Layer-Shell, deckend, ohne Animation) – ein vorgeladener Prozess (`easylinux-taskmanager.service`) |
+| `apps/easylinux/` | gemeinsame Python-Bausteine: `procapps` (Apps statt Prozesse über systemd-Gruppen), `desktop` (.desktop lesen), `single` (eine Instanz + Nachrichten), `services`, `sysperf`, `autostart`, `gpu` (NVIDIA über nvidia-smi, Intel/AMD über DRM-fdinfo, eigener Thread), `netproc` (TCP je Prozess über `ss`), `apphistory` |
+| `apps/taskmanager/` | Taskmanager (Tabs wie Win 11), Strg+Alt+Entf-Bildschirm `SessionMenu.qml` (Layer-Shell, deckend, ohne Animation) und Win+X-Menü `QuickMenu.qml` (`--quick-menu`). Ein vorgeladener Prozess (`easylinux-taskmanager.service`), der auch bei neuem Bildschirm `user/90-layout/apply.sh` startet |
 | `apps/emergency/` | Notfall-Dienst (root, liest Tastatur per evdev) + Textmenü auf Konsole 9, falls die Oberfläche hängt |
-| `apps/settings/` | Einstellungen wie Win 11 in einem Fenster. Einträge/Suche: `settings_entries.py`. Eigene Seiten: `page:display` (`DisplayPage.qml`+`display.py`), `page:snapassist` (`SnapAssistPage.qml`+`snapassist.py`), `page:developer` (eigene Dienste: `DeveloperPage.qml`+`developer.py`, Suche in `easylinux/myservices.py`), `page:installed`. Gemeinsame Karte: `Card.qml`. `kcmhost/` = C++-Brücke, bettet KDE-KCMs ein |
+| `apps/settings/` | Einstellungen wie Win 11 in einem Fenster. Einträge/Suche: `settings_entries.py`. Eigene Seiten: `page:display` (`DisplayPage.qml`+`display.py`), `page:network` (`NetworkPage.qml`+`network.py`, nmcli), `page:datetime` (`ClockPage.qml`+`clock.py`, timedatectl), `page:taskbar` (`TaskbarPage.qml`+`taskbar.py`, Plasma-Skripte), `page:snapassist` (`SnapAssistPage.qml`+`snapassist.py`), `page:developer` (eigene Dienste: `DeveloperPage.qml`+`developer.py`, Suche in `easylinux/myservices.py`), `page:installed`. Gemeinsame Karte: `Card.qml`. `kcmhost/` = C++-Brücke, bettet KDE-KCMs ein. `ALIASES` + `route.py`: KDE-Seiten, die easyLinux zeigt; `system/usr/local/bin/{systemsettings,kcmshell6}` leiten dorthin um |
+| `apps/photos/`, `apps/mediaplayer/` | Bildbetrachter „Fotos“ und „Medienplayer“ (QtMultimedia), Standard-Apps über `user/20-apps` |
 | `apps/updater/`, `apps/security/` | Update-Manager bzw. Sicherheit-App; root-Teil jeweils `helper.py` über pkexec/Polkit. Automatische Updates: System-Timer `easylinux-autoupdate` → `helper.py auto-update` (nur bei gesperrtem Bildschirm, am Netzteil, nicht getaktet; Zustand in `/var/lib/easylinux/autoupdate*.json`), Neustart-Hinweis über User-Unit `easylinux-update-notify.path` |
 | `apps/openfile/` | Doppelklick-Installation (.AppImage, .flatpakref, .pkg.tar.zst, .deb/.rpm-Hinweis) |
 | `apps/taskbarmenu/` | C++-Plasma-Plugin: Rechtsklickmenü der Leiste |
@@ -42,9 +43,11 @@ Installiert liegt alles unter `/opt/easylinux` (Programme) bzw. direkt im System
 - Snap-Assist-Optionen: kwinrc `[Script-easylinux-snapassist]` (`AllScreens`, `WhenOccupied`, `Quarters`), Skript liest per `KWin.readConfig` bei jedem Andocken; nach Schreiben `qdbus6 org.kde.KWin /KWin reconfigure`.
 - Plasma bringt OOM-Meldungen und CachyOS Btrfs-Snapshots (snap-pac) selbst mit – nicht doppelt bauen.
 - pkexec/Polkit „aktive Sitzung“ greift nicht für per SSH gestartete Programme → GUI per `kstart --` aus `vsess`.
+- Taskleiste (`user/90-layout`): nur die Ersteinrichtung legt sie neu an (`RESET`), sonst nur ergänzen. Plasma-Skripte hängen Widgets immer hinten an; Reihenfolge ändern geht nur über `AppletOrder` bei beendetem Plasma (`settings/taskbar.py`).
+- `pkexec` mit Helfern aus dem Quellordner fragt nach dem Passwort (Polkit-Regeln gelten nur für `/opt`).
 - Systemweite Änderungen nur über Paket/`easylinux.install`, pro Benutzer nur über `user/*/apply.sh` mit `backup_config` – sonst nimmt die Deinstallation sie nicht zurück.
 
 ## Offen
 
-Startmenü-Favoriten, Leiste auf weiteren Bildschirmen, eigener Medienplayer, Laufwerks-Seite, dauerhafte Benachrichtigungen,
-Netzwerk je App, Andock-Layouts am Maximieren-Knopf, signierte Paketquelle, Snap Assist mit mehreren Bildschirmen auf echter Hardware testen.
+Laufwerks-Seite, dauerhafte Benachrichtigungen,
+Andock-Layouts am Maximieren-Knopf, signierte Paketquelle, Sicherungspunkte (Snapper + snap-pac) einrichten, Netzwerk je App auch für UDP/QUIC, Snap Assist mit mehreren Bildschirmen auf echter Hardware testen.
