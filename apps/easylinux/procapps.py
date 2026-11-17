@@ -57,6 +57,17 @@ def _io_bytes(cg):
     return total
 
 
+def _memory(cg):
+    """Belegter Speicher einer Gruppe wie bei Windows (privater Arbeitssatz): ohne Datei-Zwischenspeicher,
+    den das System jederzeit freigeben kann."""
+    used = 0
+    for line in _read(os.path.join(cg, "memory.stat")).splitlines():
+        k, _, v = line.partition(" ")
+        if k in ("anon", "shmem", "kernel"):
+            used += int(v)
+    return used or int(_read(os.path.join(cg, "memory.current"), "0") or 0)
+
+
 def _cpu_usec(cg):
     for line in _read(os.path.join(cg, "cpu.stat")).splitlines():
         if line.startswith("usage_usec"):
@@ -164,7 +175,7 @@ class Monitor:
                 continue
             app = App(unit, path, entry, app_id)
             app.pids = pids
-            app.memory = int(_read(os.path.join(path, "memory.current"), "0") or 0)
+            app.memory = _memory(path)
             usec, io = _cpu_usec(path), _io_bytes(path)
             last = self._last.get(path)
             if last and now > last[0]:

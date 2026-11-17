@@ -13,6 +13,7 @@ ColumnLayout {
     property string selectedKey: ""
     property string selectedName: ""
     property bool selectedEfficient: false
+    property bool selectedChild: false
     readonly property int colStatus: Kirigami.Units.gridUnit * 7
     readonly property int colNum: Kirigami.Units.gridUnit * 5.5
     readonly property int colGpu: Kirigami.Units.gridUnit * 3.5
@@ -25,7 +26,7 @@ ColumnLayout {
             icon.name: "battery-profile-powersave"
             checkable: true
             checked: page.selectedEfficient
-            enabled: page.selectedKey !== ""
+            enabled: page.selectedKey !== "" && !page.selectedChild
             tooltip: "Die App bekommt weniger Rechenzeit, damit andere Apps flüssig bleiben."
             onTriggered: backend.setEfficient(page.selectedKey, checked)
         },
@@ -97,6 +98,8 @@ ColumnLayout {
                 required property string gpuText
                 required property int count
                 required property bool efficient
+                required property bool child
+                required property bool expanded
                 width: ListView.view.width
                 highlighted: page.selectedKey === key
                 focusPolicy: Qt.NoFocus
@@ -106,18 +109,36 @@ ColumnLayout {
                 bottomPadding: 0
                 function select() {
                     list.currentIndex = index
-                    page.selectedKey = key; page.selectedName = name; page.selectedEfficient = efficient
+                    page.selectedKey = key; page.selectedName = name; page.selectedEfficient = efficient; page.selectedChild = child
                 }
                 onEfficientChanged: if (highlighted) page.selectedEfficient = efficient
                 onClicked: select()
-                onDoubleClicked: backend.endTask(key)
+                // Wie Windows: Doppelklick klappt auf bzw. zu (beendet nichts versehentlich)
+                onDoubleClicked: if (!child && count > 1) backend.toggleExpanded(key)
+                Keys.onRightPressed: if (!child && count > 1 && !expanded) backend.toggleExpanded(key)
+                Keys.onLeftPressed: if (!child && expanded) backend.toggleExpanded(key)
                 TapHandler {
                     acceptedButtons: Qt.RightButton
                     onTapped: (pt) => { row.select(); contextMenu.popup(row, pt.position.x, pt.position.y) }
                 }
                 contentItem: RowLayout {
                     spacing: 0
+                    // Pfeil zum Aufklappen (App mit mehreren Prozessen), Einrückung für Unterzeilen
+                    QQC2.ToolButton {
+                        visible: !row.child
+                        enabled: row.count > 1
+                        opacity: row.count > 1 ? 1 : 0
+                        icon.name: row.expanded ? "go-down-symbolic" : "go-next-symbolic"
+                        display: QQC2.AbstractButton.IconOnly
+                        text: row.expanded ? "Zuklappen" : "Aufklappen"
+                        focusPolicy: Qt.NoFocus
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.small + Kirigami.Units.smallSpacing * 2
+                        Layout.preferredHeight: Layout.preferredWidth
+                        onClicked: backend.toggleExpanded(row.key)
+                    }
+                    Item { visible: row.child; Layout.preferredWidth: Kirigami.Units.gridUnit * 2.2 }
                     Kirigami.Icon {
+                        visible: !row.child
                         source: row.iconName
                         fallback: "application-x-executable"
                         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
@@ -126,6 +147,7 @@ ColumnLayout {
                     }
                     QQC2.Label {
                         text: row.count > 1 ? row.name + "  (" + row.count + ")" : row.name
+                        opacity: row.child ? 0.85 : 1
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
@@ -157,14 +179,24 @@ ColumnLayout {
             text: "Effizienzmodus"
             icon.name: "battery-profile-powersave"
             checkable: true
+            enabled: !page.selectedChild
             checked: page.selectedEfficient
             onTriggered: backend.setEfficient(page.selectedKey, checked)
         }
         QQC2.MenuSeparator {}
-        QQC2.MenuItem { text: "Dateispeicherort öffnen"; icon.name: "folder-open"; onTriggered: backend.openLocation(page.selectedKey) }
+        QQC2.MenuItem {
+            text: "Dateispeicherort öffnen"; icon.name: "folder-open"
+            onTriggered: page.selectedChild ? backend.openProcessLocation(parseInt(page.selectedKey.split("/").pop()))
+                                            : backend.openLocation(page.selectedKey)
+        }
+        QQC2.MenuItem {
+            text: "Online suchen"; icon.name: "internet-web-browser"
+            onTriggered: Qt.openUrlExternally("https://duckduckgo.com/?q=" + encodeURIComponent(page.selectedName + " Linux"))
+        }
         QQC2.MenuItem {
             text: "Zu Details wechseln"
             icon.name: "view-list-text"
+            enabled: !page.selectedChild
             onTriggered: { backend.showDetailsFor(page.selectedKey); page.detailsRequested() }
         }
     }

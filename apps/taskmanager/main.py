@@ -79,7 +79,7 @@ class Backend(QObject):
         super().__init__()
         self.apps_model = DictModel(["key", "name", "iconName", "cpu", "cpuText", "memory", "memoryText",
                                      "disk", "diskText", "net", "netText", "gpu", "gpuText", "isApp",
-                                     "count", "efficient"], "key")
+                                     "count", "efficient", "child", "pid", "expanded"], "key")
         self.proc_model = DictModel(["pid", "name", "status", "user", "cpu", "cpuText", "memory",
                                      "memoryText", "command", "nice", "own"], "pid")
         self.service_model = DictModel(["unit", "name", "description", "status", "running", "failed",
@@ -93,6 +93,8 @@ class Backend(QObject):
         self._devices, self._autostart = [], []
         self._cpu, self._mem_used, self._mem_total, self._disk = 0.0, 0, 1, 0.0
         self._net_total, self._gpu_total = 0.0, 0.0
+        self._expanded = set()           # aufgeklappte Apps (zeigen ihre einzelnen Prozesse)
+        self._pid_rows, self._net_pids, self._gpu_pids = {}, {}, {}
         self._page = "processes"
         self._filter = ""
         self._pid_filter = []
@@ -115,6 +117,9 @@ class Backend(QObject):
                 a.net = sum(net.get(p, 0.0) for p in a.pids)
                 a.gpu = min(100.0, sum(gpu_pids.get(p, 0.0) for p in a.pids))
             self._net_total = sum(net.values())
+            self._net_pids, self._gpu_pids = net, gpu_pids
+            if self._expanded:
+                self._pid_rows = {p["pid"]: p for p in self.table.update()}
             cards = [c.busy for c in self.gpu.cards() if c.busy is not None]
             self._gpu_total = max(cards or [0.0])
             self._show_apps()
@@ -193,13 +198,46 @@ class Backend(QObject):
             # Gruppen (Apps / Hintergrundprozesse) bleiben erhalten, sortiert wird innerhalb
             ordered = self._sorted("processes", rows)
             rows = [r for r in ordered if r["isApp"]] + [r for r in ordered if not r["isApp"]]
-        self.apps_model.set_rows(rows)
+        out = []
+        for r in rows:
+            r.update(child=False, pid=0, expanded=r["key"] in self._expanded and r["count"] > 1)
+            out.append(r)
+            if r["expanded"]:
+                out += self._child_rows(r)
+        self.apps_model.set_rows(out)
+
+    def _child_rows(self, parent):
+        """Einzelne Prozesse einer aufgeklappten App (wie die Unterzeilen bei Windows)."""
+        a = self._app(parent["key"])
+        children = []
+        for pid in (a.pids if a else []):
+            p = self._pid_rows.get(pid)
+            if not p:
+                continue
+            net, gpu_ = self._net_pids.get(pid, 0.0), self._gpu_pids.get(pid, 0.0)
+            children.append({"key": f"{parent['key']}/{pid}", "name": p["name"], "iconName": "",
+                             "cpu": p["cpu"], "cpuText": pct(p["cpu"]), "memory": p["memory"],
+                             "memoryText": procapps.human_bytes(p["memory"]), "disk": 0.0, "diskText": "",
+                             "net": net, "netText": sysperf.human_bits(net), "gpu": gpu_,
+                             "gpuText": f"{gpu_:.0f} %", "isApp": parent["isApp"], "count": 0,
+                             "efficient": False, "child": True, "pid": pid, "expanded": False})
+        return sorted(children, key=lambda c: -c["memory"])
+
+    @Slot(str)
+    def toggleExpanded(self, key):
+        self._expanded ^= {key}
+        if self._expanded:
+            self._pid_rows = {p["pid"]: p for p in self.table.update()}
+        self._show_apps()
 
     def _app(self, key):
         return next((a for a in self._apps if (a.entry.id if a.entry else a.app_id) == key), None)
 
     @Slot(str)
     def endTask(self, key):
+        if "/" in key:  # einzelner Prozess einer aufgeklappten App
+            self.endProcess(int(key.rsplit("/", 1)[1]), False)
+            return
         a = self._app(key)
         if not a:
             return

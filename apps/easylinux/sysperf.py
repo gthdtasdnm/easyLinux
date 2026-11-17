@@ -126,6 +126,21 @@ class Performance:
         self._model = cpu_model()
         self._cores = self._count_cores()
         self._addr_cache = (0, {})
+        self._root_disk = self._find_root_disk()
+
+    @staticmethod
+    def _find_root_disk():
+        """Laufwerk, auf dem / liegt (z. B. „sda“ oder „nvme0n1“)."""
+        try:
+            src = subprocess.run(["findmnt", "-no", "SOURCE", "/"], capture_output=True, text=True,
+                                 timeout=2).stdout.strip().split("[")[0]
+            dev = os.path.basename(os.path.realpath(src))
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        for disk in os.listdir("/sys/block"):
+            if disk == dev or os.path.exists(f"/sys/block/{disk}/{dev}"):
+                return disk
+        return ""
 
     @staticmethod
     def _count_cores():
@@ -199,6 +214,8 @@ class Performance:
         dev.details = [("In Verwendung", human_size(used)), ("Verfügbar", human_size(avail)),
                        ("Zwischengespeichert", human_size(info.get("Cached", 0) + info.get("Buffers", 0))),
                        ("Auslagerung", f"{human_size(swap_used)} von {human_size(swap_total)}"),
+                       ("Zugesichert", f"{human_size(info.get('Committed_AS', 0))}/"
+                                       f"{human_size(info.get('CommitLimit', 0))}"),
                        ("Gesamt", human_size(total))]
 
     # ------------------------------------------------------------ Laufwerke
@@ -208,7 +225,9 @@ class Performance:
         for line in _read("/proc/diskstats").splitlines():
             f = line.split()
             if len(f) >= 14:
-                stats[f[2]] = (int(f[5]) * 512, int(f[9]) * 512, int(f[12]))  # gelesen, geschrieben, ms aktiv
+                # gelesen, geschrieben, ms aktiv, Anzahl Zugriffe, ms Wartezeit gesamt
+                stats[f[2]] = (int(f[5]) * 512, int(f[9]) * 512, int(f[12]),
+                               int(f[3]) + int(f[7]), int(f[6]) + int(f[10]))
         idx = 0
         for name in sorted(os.listdir("/sys/block")):
             if name.startswith(("loop", "ram", "zram", "sr", "dm-", "md")) or name not in stats:
@@ -226,18 +245,23 @@ class Performance:
                 kind = "Wechseldatenträger"
             dev = self._dev("disk:" + name, "disk", f"Datenträger {idx} ({name})", "#27ae60")
             idx += 1
-            r, w, busy = stats[name]
+            r, w, busy, ios, wait = stats[name]
             last = self._disk_last.get(name)
             rr = wr = 0.0
+            resp = 0.0
             if last and dt:
                 rr, wr = (r - last[0]) / dt, (w - last[1]) / dt
                 dev.value = min(100.0, (busy - last[2]) / (dt * 1000) * 100)
-            self._disk_last[name] = (r, w, busy)
+                if ios > last[3]:
+                    resp = (wait - last[4]) / (ios - last[3])
+            self._disk_last[name] = (r, w, busy, ios, wait)
             model = (_read(f"/sys/block/{name}/device/model").strip()
                      or _read(f"/sys/block/{name}/device/name").strip() or name)
             dev.subtitle = f"{kind}  {dev.value:.0f} %"
             dev.details = [("Aktive Zeit", f"{dev.value:.0f} %"), ("Lesegeschwindigkeit", human_rate(rr)),
                            ("Schreibgeschwindigkeit", human_rate(wr)), ("Kapazität", human_size(size)),
+                           ("Durchschnittliche Antwortzeit", f"{resp:.1f} ms".replace(".", ",")),
+                           ("Systemdatenträger", "Ja" if name == self._root_disk else "Nein"),
                            ("Typ", kind), ("Modell", model)]
         return {"disk:" + n for n in present}
 
