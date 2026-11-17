@@ -3,7 +3,7 @@
 #   easylinux-shortcut launch <datei.desktop> <Name> <Taste…>   App-Start auf Taste legen
 #   easylinux-shortcut set <Komponente> <Aktion> <Taste…>        Taste einer vorhandenen Aktion ändern
 #   easylinux-shortcut clear <Komponente> <Aktion>               Taste entfernen
-# Tasten als Text, z. B. Ctrl+Shift+Esc oder Ctrl+Alt+Del.
+# Tasten als Text, z. B. Ctrl+Shift+Esc, Ctrl+Alt+Del oder Meta+I.
 set -euo pipefail
 
 keycode() {
@@ -17,6 +17,8 @@ keycode() {
             Meta) code=$((code | 0x10000000)) ;;
             Esc) code=$((code | 0x01000000)) ;;
             Del) code=$((code | 0x01000007)) ;;
+            Tab) code=$((code | 0x01000001)) ;;
+            [A-Z0-9]) code=$((code | $(printf '%d' "'$part"))) ;;  # Qt-Tastencode = ASCII-Großbuchstabe
             *) echo "Unbekannte Taste: $part" >&2; exit 1 ;;
         esac
     done
