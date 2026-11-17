@@ -12,6 +12,8 @@ depends=(
     python pyside6 kdialog pacman-contrib arch-audit flatpak fuse2 breeze-gtk xdg-desktop-portal-kde
     plasma-workspace kwin libplasma kcmutils kio kconfig kservice kdbusaddons kde-cli-tools qt6-base
     qt6-declarative qt6-tools layer-shell-qt libkscreen libnotify polkit systemd konsole dolphin
+    # Fotos und Medienplayer, Netzwerk-Seite
+    qt6-multimedia qt6-multimedia-ffmpeg qt6-imageformats networkmanager
     # Zum Bauen der C++-Teile gegen die installierte Plasma-Version (siehe easylinux-rebuild)
     gcc pkgconf
 )
