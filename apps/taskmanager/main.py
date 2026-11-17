@@ -15,7 +15,7 @@ from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QProcess, Q
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
-from easylinux import autostart, procapps, services, single, sysperf
+from easylinux import autostart, gpu, netproc, procapps, services, single, sysperf
 
 NAME = "easylinux-taskmanager"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -78,17 +78,21 @@ class Backend(QObject):
     def __init__(self):
         super().__init__()
         self.apps_model = DictModel(["key", "name", "iconName", "cpu", "cpuText", "memory", "memoryText",
-                                     "disk", "diskText", "isApp", "count", "efficient"], "key")
+                                     "disk", "diskText", "net", "netText", "gpu", "gpuText", "isApp",
+                                     "count", "efficient"], "key")
         self.proc_model = DictModel(["pid", "name", "status", "user", "cpu", "cpuText", "memory",
                                      "memoryText", "command", "nice", "own"], "pid")
         self.service_model = DictModel(["unit", "name", "description", "status", "running", "failed",
                                         "startup"], "unit")
         self.monitor = procapps.Monitor()
         self.table = procapps.ProcessTable()
-        self.perf = sysperf.Performance()
+        self.gpu = gpu.GpuMonitor()
+        self.net = netproc.NetMonitor()
+        self.perf = sysperf.Performance(self.gpu)
         self._apps, self._procs, self._services = [], [], []
         self._devices, self._autostart = [], []
         self._cpu, self._mem_used, self._mem_total, self._disk = 0.0, 0, 1, 0.0
+        self._net_total, self._gpu_total = 0.0, 0.0
         self._page = "processes"
         self._filter = ""
         self._pid_filter = []
@@ -106,6 +110,13 @@ class Backend(QObject):
         if self._page == "processes":
             self._apps = self.monitor.update()
             self._disk = sum(a.disk for a in self._apps)
+            net, gpu_pids = self.net.update(), self.gpu.per_pid()
+            for a in self._apps:
+                a.net = sum(net.get(p, 0.0) for p in a.pids)
+                a.gpu = min(100.0, sum(gpu_pids.get(p, 0.0) for p in a.pids))
+            self._net_total = sum(net.values())
+            cards = [c.busy for c in self.gpu.cards() if c.busy is not None]
+            self._gpu_total = max(cards or [0.0])
             self._show_apps()
         elif self._page == "details":
             self._procs = self.table.update()
@@ -117,9 +128,11 @@ class Backend(QObject):
     def setActive(self, active):
         """Im Hintergrund nicht messen – spart Strom und Rechenzeit."""
         if active:
+            self.gpu.start()
             self.refresh()
             self.timer.start()
         else:
+            self.gpu.stop()
             self.timer.stop()
 
     @Slot(str)
@@ -172,7 +185,9 @@ class Backend(QObject):
             rows.append({"key": a.entry.id if a.entry else a.app_id, "name": a.name, "iconName": a.icon,
                          "cpu": a.cpu, "cpuText": pct(a.cpu), "memory": a.memory,
                          "memoryText": procapps.human_bytes(a.memory), "disk": a.disk,
-                         "diskText": sysperf.human_rate(a.disk), "isApp": a.is_app,
+                         "diskText": sysperf.human_rate(a.disk), "net": a.net,
+                         "netText": sysperf.human_bits(a.net), "gpu": a.gpu, "gpuText": f"{a.gpu:.0f} %",
+                         "isApp": a.is_app,
                          "count": len(a.pids), "efficient": a.efficient})
         if rows:
             # Gruppen (Apps / Hintergrundprozesse) bleiben erhalten, sortiert wird innerhalb
@@ -230,6 +245,14 @@ class Backend(QObject):
     @Property(str, notify=statsChanged)
     def diskTotal(self):
         return sysperf.human_rate(self._disk)
+
+    @Property(str, notify=statsChanged)
+    def netTotal(self):
+        return sysperf.human_bits(self._net_total)
+
+    @Property(str, notify=statsChanged)
+    def gpuTotal(self):
+        return f"{self._gpu_total:.0f} %"
 
     # ------------------------------------------------------------ Leistung
     @Property("QVariantList", notify=perfChanged)

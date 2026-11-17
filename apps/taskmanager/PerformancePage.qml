@@ -9,6 +9,9 @@ RowLayout {
     spacing: 0
 
     property string selected: "cpu"
+    // Wie Windows: Rechtsklick aufs Diagramm → Gesamtauslastung oder je logischem Prozessor
+    property bool perCore: false
+    readonly property bool showCores: perCore && device !== null && device.kind === "cpu"
     readonly property var device: backend.devices.find(d => d.key === selected) || backend.devices[0] || null
     property list<QtObject> actions
 
@@ -56,7 +59,7 @@ RowLayout {
                         spacing: 0
                         Layout.fillWidth: true
                         QQC2.Label { text: dev.modelData.title; font.bold: true; Layout.fillWidth: true; elide: Text.ElideRight }
-                        QQC2.Label { text: dev.modelData.subtitle; opacity: 0.75; Layout.fillWidth: true; elide: Text.ElideRight; font: Kirigami.Theme.smallFont }
+                        QQC2.Label { text: dev.modelData.subtitle; opacity: 0.75; Layout.fillWidth: true; elide: Text.ElideRight; maximumLineCount: 2; font: Kirigami.Theme.smallFont }
                     }
                 }
             }
@@ -84,19 +87,54 @@ RowLayout {
         RowLayout {
             QQC2.Label {
                 text: !page.device ? "" : page.device.kind === "net" ? "Durchsatz (Empfangen / Senden)"
-                    : page.device.kind === "disk" ? "Aktive Zeit" : page.device.kind === "memory" ? "Speichernutzung" : "Auslastung in % über 60 Sekunden"
+                    : page.device.kind === "disk" ? "Aktive Zeit" : page.device.kind === "memory" ? "Speichernutzung"
+                    : page.showCores ? "Auslastung je logischem Prozessor (Rechtsklick zum Umschalten)"
+                    : page.device.kind === "cpu" ? "Auslastung in % über 60 Sekunden (Rechtsklick: je Prozessor)" : "Auslastung in % über 60 Sekunden"
                 opacity: 0.75
                 Layout.fillWidth: true
             }
             QQC2.Label { text: page.device ? page.device.scaleText : ""; opacity: 0.75 }
         }
         Graph {
+            visible: !page.showCores
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: Kirigami.Units.gridUnit * 8
             history: page.device ? page.device.history : []
             history2: page.device ? page.device.history2 : []
             color: page.device ? page.device.color : "gray"
+            TapHandler { acceptedButtons: Qt.RightButton; onTapped: (pt) => graphMenu.popup() }
+        }
+        GridLayout {
+            id: coreGrid
+            visible: page.showCores
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 8
+            readonly property int count: page.device && page.device.cores ? page.device.cores.length : 0
+            columns: Math.max(1, Math.ceil(Math.sqrt(count * 2)))
+            columnSpacing: Kirigami.Units.smallSpacing
+            rowSpacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: coreGrid.count
+                delegate: Graph {
+                    required property int index
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    history: page.device && page.device.cores ? page.device.cores[index] || [] : []
+                    color: page.device ? page.device.color : "gray"
+                    TapHandler { acceptedButtons: Qt.RightButton; onTapped: (pt) => graphMenu.popup() }
+                }
+            }
+        }
+        QQC2.Menu {
+            id: graphMenu
+            QQC2.MenuItem { text: "Gesamtauslastung"; checkable: true; checked: !page.perCore; onTriggered: page.perCore = false }
+            QQC2.MenuItem {
+                text: "Logische Prozessoren"; checkable: true; checked: page.perCore
+                enabled: page.device !== null && page.device.kind === "cpu"
+                onTriggered: page.perCore = true
+            }
         }
         RowLayout {
             QQC2.Label { text: "60 Sekunden"; opacity: 0.6; font: Kirigami.Theme.smallFont; Layout.fillWidth: true }

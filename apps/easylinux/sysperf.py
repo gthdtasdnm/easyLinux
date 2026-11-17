@@ -2,6 +2,7 @@
 import glob
 import json
 import os
+import re
 import subprocess
 import time
 
@@ -65,6 +66,7 @@ class Device:
         self.details = []        # [(Bezeichnung, Wert)]
         self.history = []
         self.history2 = []
+        self.cores = []          # je logischem Prozessor ein Verlauf (nur Prozessor)
 
     def push(self):
         self.history = (self.history + [self.value])[-60:]
@@ -74,12 +76,47 @@ class Device:
     def as_dict(self):
         return {"key": self.key, "kind": self.kind, "title": self.title, "subtitle": self.subtitle,
                 "color": self.color, "value": self.value, "history": self.history,
-                "history2": self.history2, "scaleText": self.scale_text,
+                "history2": self.history2, "scaleText": self.scale_text, "cores": self.cores,
                 "details": [{"label": k, "value": v} for k, v in self.details]}
 
 
+def _cache_sizes():
+    """L1/L2/L3-Cache wie bei Windows (Summe über alle Kerne, gleiche Caches nur einmal)."""
+    sizes, seen = {}, set()
+    for idx in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cache/index[0-9]*"):
+        level = _read(f"{idx}/level").strip()
+        size = _read(f"{idx}/size").strip()
+        shared = _read(f"{idx}/shared_cpu_list").strip()
+        kind = _read(f"{idx}/type").strip()
+        key = (level, kind, shared)
+        if not level or not size.endswith("K") or key in seen:
+            continue
+        seen.add(key)
+        sizes[level] = sizes.get(level, 0) + int(size[:-1]) * 1024
+    return [(f"L{lvl}-Cache", human_size(n)) for lvl, n in sorted(sizes.items())]
+
+
+def _base_speed():
+    for f in ("base_frequency", "cpuinfo_max_freq"):
+        v = _read(f"/sys/devices/system/cpu/cpu0/cpufreq/{f}").strip()
+        if v.isdigit():
+            return f"{int(v) / 1e6:.2f} GHz".replace(".", ",")
+    return "–"
+
+
+def _virtualization():
+    flags = next((l for l in _read("/proc/cpuinfo").splitlines() if l.startswith("flags")), "")
+    return "Aktiviert" if (" vmx" in flags or " svm" in flags) else "Nicht verfügbar"
+
+
 class Performance:
-    def __init__(self):
+    def __init__(self, gpu=None):
+        self.gpu = gpu
+        self._core_last = {}
+        self._static = [("Basisgeschwindigkeit", _base_speed()),
+                        ("Sockets", str(len({_read(p).strip() for p in glob.glob(
+                            "/sys/devices/system/cpu/cpu[0-9]*/topology/physical_package_id")}) or 1)),
+                        ("Virtualisierung", _virtualization())] + _cache_sizes()
         self._cpu_last = None
         self._disk_last = {}
         self._net_last = {}
@@ -111,6 +148,23 @@ class Performance:
             d_total, d_idle = total - self._cpu_last[0], idle - self._cpu_last[1]
             dev.value = 100.0 * (d_total - d_idle) / d_total if d_total else 0.0
         self._cpu_last = (total, idle)
+        # Je logischem Prozessor (Ansicht „Logische Prozessoren“ wie bei Windows)
+        cores = []
+        for line in _read("/proc/stat").splitlines()[1:]:
+            if not re.match(r"cpu\d+ ", line):
+                break
+            name, *nums = line.split()
+            v = [int(x) for x in nums]
+            c_idle, c_total = v[3] + v[4], sum(v)
+            last = self._core_last.get(name)
+            pct_ = 0.0
+            if last and c_total > last[0]:
+                pct_ = 100.0 * ((c_total - last[0]) - (c_idle - last[1])) / (c_total - last[0])
+            self._core_last[name] = (c_total, c_idle)
+            cores.append(pct_)
+        if len(dev.cores) != len(cores):
+            dev.cores = [[] for _ in cores]
+        dev.cores = [(h + [v])[-60:] for h, v in zip(dev.cores, cores)]
         mhz = [float(l.split(":")[1]) for l in _read("/proc/cpuinfo").splitlines() if l.startswith("cpu MHz")]
         speed = f"{sum(mhz) / len(mhz) / 1000:.2f} GHz".replace(".", ",") if mhz else "–"
         procs = threads = 0
@@ -125,7 +179,7 @@ class Performance:
         dev.details = [("Auslastung", f"{dev.value:.0f} %"), ("Geschwindigkeit", speed),
                        ("Prozesse", str(procs)), ("Threads", str(threads)),
                        ("Betriebszeit", uptime_text()), ("Modell", self._model),
-                       ("Kerne", str(self._cores)), ("Logische Prozessoren", str(os.cpu_count()))]
+                       ("Kerne", str(self._cores)), ("Logische Prozessoren", str(os.cpu_count()))] + self._static
 
     # ------------------------------------------------------------ Arbeitsspeicher
     def _memory(self):
@@ -245,21 +299,27 @@ class Performance:
     # ------------------------------------------------------------ Grafikkarte
     def _gpus(self):
         present = set()
-        for i, card in enumerate(sorted(glob.glob("/sys/class/drm/card[0-9]"))):
-            base = f"{card}/device"
-            busy = _read(f"{base}/gpu_busy_percent").strip()
-            if not busy.isdigit():
-                continue  # nur Grafikkarten, die ihre Auslastung melden (AMD)
-            key = "gpu:" + os.path.basename(card)
+        if not self.gpu:
+            return present
+        for i, card in enumerate(self.gpu.cards()):
+            key = "gpu:" + card.slot
             present.add(key)
             dev = self._dev(key, "gpu", f"GPU {i}", "#e74c3c")
-            dev.value = float(busy)
-            used = int(_read(f"{base}/mem_info_vram_used", "0") or 0)
-            total = int(_read(f"{base}/mem_info_vram_total", "0") or 0)
-            dev.subtitle = f"{dev.value:.0f} %"
-            dev.details = [("Auslastung", f"{dev.value:.0f} %")]
-            if total:
-                dev.details.append(("Grafikspeicher", f"{human_size(used)} von {human_size(total)}"))
+            dev.value = card.busy or 0.0
+            temp = f" ({card.temp} °C)" if card.temp is not None else ""
+            dev.subtitle = card.name + ("" if card.busy is None else f"\n{dev.value:.0f} %{temp}")
+            dev.details = [("Auslastung", "–" if card.busy is None else f"{dev.value:.0f} %")]
+            if card.mem_total:
+                dev.details.append(("Dedizierter GPU-Speicher",
+                                    f"{human_size(card.mem_used)}/{human_size(card.mem_total)}"))
+            if card.temp is not None:
+                dev.details.append(("GPU-Temperatur", f"{card.temp} °C"))
+            if card.clock:
+                dev.details.append(("Taktrate", f"{card.clock} MHz"))
+            if card.driver_version:
+                dev.details.append(("Treiberversion", card.driver_version))
+            dev.details.append(("Modell", card.name))
+            dev.details.append(("Treiber", card.driver))
         return present
 
     def update(self):

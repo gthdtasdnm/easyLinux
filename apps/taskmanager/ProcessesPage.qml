@@ -3,7 +3,7 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
-// Prozesse: Apps und Hintergrundprozesse mit Prozessor, Arbeitsspeicher, Datenträger
+// Prozesse: Apps und Hintergrundprozesse mit Prozessor, Arbeitsspeicher, Datenträger, Netzwerk, GPU
 ColumnLayout {
     id: page
     spacing: 0
@@ -14,7 +14,8 @@ ColumnLayout {
     property string selectedName: ""
     property bool selectedEfficient: false
     readonly property int colStatus: Kirigami.Units.gridUnit * 7
-    readonly property int colNum: Kirigami.Units.gridUnit * 6
+    readonly property int colNum: Kirigami.Units.gridUnit * 5.5
+    readonly property int colGpu: Kirigami.Units.gridUnit * 3.5
 
     function focusList(selectFirst) { list.forceActiveFocus(); if (selectFirst && list.currentIndex < 0 && list.count > 0) list.currentIndex = 0 }
 
@@ -54,6 +55,8 @@ ColumnLayout {
         HeaderCell { text: "Prozessor"; column: "cpu"; total: backend.cpuTotal; Layout.preferredWidth: page.colNum }
         HeaderCell { text: "Arbeitsspeicher"; column: "memory"; total: backend.memoryTotal; Layout.preferredWidth: page.colNum }
         HeaderCell { text: "Datenträger"; column: "disk"; total: backend.diskTotal; Layout.preferredWidth: page.colNum }
+        HeaderCell { text: "Netzwerk"; column: "net"; total: backend.netTotal; Layout.preferredWidth: page.colNum }
+        HeaderCell { text: "GPU"; column: "gpu"; total: backend.gpuTotal; Layout.preferredWidth: page.colGpu }
     }
     Kirigami.Separator { Layout.fillWidth: true }
 
@@ -88,6 +91,10 @@ ColumnLayout {
                 required property string memoryText
                 required property real disk
                 required property string diskText
+                required property real net
+                required property string netText
+                required property real gpu
+                required property string gpuText
                 required property int count
                 required property bool efficient
                 width: ListView.view.width
@@ -136,6 +143,8 @@ ColumnLayout {
                     HeatCell { text: row.cpuText; load: row.cpu / 50; Layout.preferredWidth: page.colNum; Layout.fillHeight: true }
                     HeatCell { text: row.memoryText; load: row.memory / (2 * 1024 * 1024 * 1024); Layout.preferredWidth: page.colNum; Layout.fillHeight: true }
                     HeatCell { text: row.diskText; load: row.disk / (20 * 1024 * 1024); Layout.preferredWidth: page.colNum; Layout.fillHeight: true }
+                    HeatCell { text: row.netText; load: row.net / (2 * 1024 * 1024); Layout.preferredWidth: page.colNum; Layout.fillHeight: true }
+                    HeatCell { text: row.gpuText; load: row.gpu / 50; Layout.preferredWidth: page.colGpu; Layout.fillHeight: true }
                 }
             }
         }

@@ -70,6 +70,8 @@ class App:
         self.cpu = 0.0      # Prozent einer CPU-Gesamtleistung (alle Kerne = 100 %)
         self.memory = 0     # Bytes
         self.disk = 0.0     # Bytes pro Sekunde (lesen + schreiben)
+        self.net = 0.0      # Bytes pro Sekunde (TCP, siehe netproc)
+        self.gpu = 0.0      # Prozent der Grafikkarte
         self.pids = []
 
     @property
