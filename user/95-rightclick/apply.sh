@@ -7,6 +7,11 @@ here="$(cd "$(dirname "$0")" && pwd)"
 # Plasma muss dafür kurz neu starten, sonst überschreibt es die Einstellung beim Beenden.
 [ -e /usr/lib/qt6/plugins/plasma/containmentactions/org.easylinux.taskbarmenu.so ] || { warn "Rechtsklickmenü fehlt – übersprungen."; exit 0; }
 backup_config plasma-org.kde.plasma.desktop-appletsrc
+# Schon eingerichtet → Leiste nicht unnötig neu starten (sie verschwindet dabei kurz).
+if [ "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 1 \
+        --key 'RightButton;NoModifier')" = org.easylinux.taskbarmenu ]; then
+    ok "Rechtsklick auf Startknopf und Taskleiste wie bei Windows"; exit 0
+fi
 plasma_stop
 kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 1 \
     --key "RightButton;NoModifier" org.easylinux.taskbarmenu

@@ -430,6 +430,12 @@ def main():
     menu.actionChosen.connect(on_action)
     menu.visibleChanged.connect(on_menu_visible)
     server = single.listen(NAME, on_message)  # noqa: F841 – muss am Leben bleiben
+
+    # Neuer Bildschirm angeschlossen → dort eine Taskleiste anlegen wie bei Windows.
+    # Kurz warten, bis Plasma den Bildschirm selbst kennt.
+    layout = os.path.join(HERE, "..", "..", "user", "90-layout", "apply.sh")
+    app.screenAdded.connect(lambda _s: QTimer.singleShot(
+        4000, lambda: QProcess.startDetached("bash", [layout])))
     if not background:
         on_message(request.decode())
     return app.exec()
