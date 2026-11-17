@@ -18,7 +18,7 @@ Entfernen: Installer öffnen (oder Einstellungen › System › easyLinux) → �
 
 ## Funktionen
 
-- **Taskleiste und Startmenü** im Windows-Stil auf jedem Bildschirm, wahlweise zentriert oder links. Rechtsklick auf den Startknopf oder Win+X öffnet das Schnellmenü
+- **Taskleiste und Startmenü** im Windows-Stil auf jedem Bildschirm, links wie bei Windows 10, auf Wunsch zentriert wie bei Windows 11. Rechtsklick auf den Startknopf oder Win+X öffnet das Schnellmenü
 - **Taskmanager** (Strg+Umschalt+Esc): Prozesse mit Netzwerk und GPU je App, Leistung mit Ansicht je Prozessorkern, App-Verlauf, Autostart, Benutzer, Details, Dienste
 - **Strg+Alt+Entf**: Sperren, Benutzer wechseln, Abmelden, Taskmanager, Neu starten, Herunterfahren
 - **Notfall-Hilfe**: hängt die Oberfläche, öffnet ein zweites Strg+Alt+Entf ein Textmenü (App beenden, Oberfläche neu starten)

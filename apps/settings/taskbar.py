@@ -11,6 +11,8 @@ import time
 
 from PySide6.QtCore import QObject, Property, Signal, Slot
 
+EDIT_MODE = ["busctl", "--user", "set-property", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell",
+             "editMode", "b", "true"]
 LAYOUT_SH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "user", "90-layout", "apply.sh")
 
 # Hilfsfunktionen, die jedem Skript vorangestellt werden
@@ -145,7 +147,8 @@ class Taskbar(QObject):
 
     @Slot()
     def editMode(self):
-        subprocess.Popen(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.editMode", "true"])
+        # editMode ist eine Eigenschaft: qdbus6 … editMode true liest sie nur und ändert nichts
+        subprocess.Popen(EDIT_MODE)
 
 
 if __name__ == "__main__":

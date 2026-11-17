@@ -26,6 +26,7 @@ from easylinux import desktop, single
 from clock import DateTime
 from developer import Developer
 from network import Network
+import taskbar
 from taskbar import Taskbar
 from display import Display
 from snapassist import SnapAssist
@@ -246,7 +247,7 @@ class Backend(QObject):
             # Voller Pfad: /usr/local/bin/kcmshell6 leitet zurück zu easyLinux (Endlosschleife)
             QProcess.startDetached("/usr/bin/kcmshell6", [target])
         elif target == "action:panel-edit":
-            QProcess.startDetached("qdbus6", ["org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.editMode", "true"])
+            QProcess.startDetached(taskbar.EDIT_MODE[0], taskbar.EDIT_MODE[1:])
         elif target.startswith("app:"):
             entry = desktop.find(target[4:])
             if entry:

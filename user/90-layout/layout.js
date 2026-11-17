@@ -77,12 +77,12 @@ var bars = panels().filter(function (p) { return p.location === "bottom"; });
 if (RESET) {
     panels().forEach(function (p) { if (p.screen === 0) p.remove(); });
     bars = panels().filter(function (p) { return p.location === "bottom"; });
-    addMainPanel(0, DEFAULT_LAUNCHERS, true);
+    addMainPanel(0, DEFAULT_LAUNCHERS, false);
 }
 
 // Angeheftete Apps der Hauptleiste übernehmen, damit alle Leisten gleich aussehen.
 var launchers = DEFAULT_LAUNCHERS;
-var centered = true;
+var centered = false;
 var main = panels().filter(function (p) { return p.screen === 0 && p.location === "bottom"; })[0];
 if (main) {
     centered = main.widgets("org.kde.plasma.panelspacer").length >= 2;
