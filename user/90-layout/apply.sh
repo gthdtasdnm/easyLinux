@@ -14,4 +14,14 @@ reset=true
 [ "${1:-}" = --reset ] && reset=true
 qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript \
     "var RESET = $reset; $(cat "$here/layout.js")" >/dev/null
+# Angeheftete Apps im Startmenü wie bei Windows – nur bei der Ersteinrichtung, eigene Favoriten bleiben
+# bei Updates unangetastet. Kickoff speichert Favoriten im Aktivitäten-Dienst, nicht in einer Datei.
+if $reset; then
+    fav() { qdbus6 org.kde.ActivityManager /ActivityManager/Resources/Linking \
+        "org.kde.ActivityManager.ResourcesLinking.$1" org.kde.plasma.favorites.applications "$2" :global >/dev/null 2>&1 || true; }
+    fav UnlinkResourceFromActivity applications:systemsettings.desktop
+    for app in easylinux-settings org.kde.dolphin easylinux-photos easylinux-mediaplayer org.kde.kcalc cachyos-pi; do
+        [ -e "/usr/share/applications/$app.desktop" ] && fav LinkResourceToActivity "applications:$app.desktop"
+    done
+fi
 ok "Taskleiste und Startmenü eingerichtet"
