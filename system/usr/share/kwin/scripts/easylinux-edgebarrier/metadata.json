@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Description": "Die Maus bleibt nur beim Ziehen eines Fensters am Rand zwischen zwei Bildschirmen hängen, sonst läuft sie frei hinüber",
+        "Icon": "input-mouse",
+        "Id": "easylinux-edgebarrier",
+        "License": "GPL",
+        "Name": "Bildschirmrand beim Fensterziehen (easyLinux)"
+    },
+    "X-Plasma-API": "javascript"
+}

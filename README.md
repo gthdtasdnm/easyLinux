@@ -29,6 +29,7 @@ Entfernen: Installer öffnen (oder Einstellungen › System › easyLinux) → �
 - **Sicherheit**: Übersicht über Virenschutz (ClamAV, optional), Firewall, Updates, Sicherungspunkte
 - **Doppelklick-Installation** für .AppImage, .flatpakref, .pkg.tar.zst; Hinweis bei .deb/.rpm
 - **Snap Assist**: nach dem Andocken an Hälfte oder Viertel Auswahl der übrigen Fenster für die freie Fläche, einstellbar
+- **Zwei Bildschirme**: Maus läuft frei hinüber, bleibt nur beim Ziehen eines Fensters kurz am Rand hängen
 - **Einheitliche App-Namen**: Dateien, Terminal, Editor, Rechner …
 - **Benachrichtigungen** verschwinden nach 6 Sekunden, bleiben im Verlauf
 

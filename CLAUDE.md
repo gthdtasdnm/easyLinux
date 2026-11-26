@@ -19,7 +19,7 @@ Sprache im Projekt: **Deutsch** (Code-Kommentare, Oberfläche, Commits). Nutzer 
 | `bin/` | Startskripte; `easylinux-user-setup` (Einrichtung pro Benutzer beim Anmelden), `easylinux-names` (einheitliche App-Namen), `easylinux-rebuild` (C++-Teile nach Plasma-Updates neu bauen), `easylinux-shortcut` |
 | `user/NN-name/` | Einrichtung pro Benutzer: `apply.sh` + `revert.sh`, laufen in Nummern-Reihenfolge. `user/VERSION` erhöhen → läuft beim nächsten Anmelden erneut |
 | `lib/common.sh` | `backup_config` (sichert Stand **vor** erster Installation), `restore_configs` u. a. |
-| `system/` | Dateien genau so, wie sie im System landen (systemd, Polkit, pacman-Hooks, KWin-Skript `usr/share/kwin/scripts/easylinux-snapassist/`) |
+| `system/` | Dateien genau so, wie sie im System landen (systemd, Polkit, pacman-Hooks, KWin-Skripte `usr/share/kwin/scripts/easylinux-snapassist/` und `easylinux-edgebarrier/` + User-Unit `easylinux-edgebarrier@.service`) |
 | `packaging/` | `PKGBUILD` + `easylinux.install` (systemweite Schritte: ctrl-alt-del.target maskieren, oomd, Flatpak-Overrides) |
 | `tools/vm/` | Test-VM steuern (siehe `tools/vm/README.md`), `tools/release/release.sh` veröffentlicht auf GitHub |
 
@@ -39,6 +39,8 @@ Installiert liegt alles unter `/opt/easylinux` (Programme) bzw. direkt im System
 ## Stolpersteine
 
 - **KWin-Skripte:** QML wird bis zur Neuanmeldung gecacht, auch fehlgeschlagene Ladeversuche je Pfad → zum Testen jedes Mal in einen **neuen** `/tmp`-Ordner kopieren und per `loadDeclarativeScript` laden.
+- `callDBus` gibt es nur in **JavaScript**-KWin-Skripten (`loadScript`), nicht in QML (`loadDeclarativeScript`). Einstellungen schreiben kann ein KWin-Skript nicht → per `callDBus` eine systemd-User-Unit starten (siehe `easylinux-edgebarrier`).
+- Bei Bruchteil-Skalierung liegen Bildschirme oft 1 px auseinander, Fensterkanten haben Nachkommastellen → Geometrievergleiche mit Spielraum.
 - **Timer im Hauptteil eines KWin-Skripts feuern nie** (nur in Fenstern wie `PlasmaCore.Dialog`) → Zeitstempel (`Date.now()`) statt Timer.
 - KWin 6.8: `window.tile = …` ist veraltet und wirkungslos → `window.tile.unmanage(window)`. Quick-Tile-Befehle kombinieren sich mit der bestehenden Kachel (oben-links + rechts = oben) → vorher lösen.
 - Snap-Assist-Optionen: kwinrc `[Script-easylinux-snapassist]` (`AllScreens`, `WhenOccupied`, `Quarters`), Skript liest per `KWin.readConfig` bei jedem Andocken; nach Schreiben `qdbus6 org.kde.KWin /KWin reconfigure`.

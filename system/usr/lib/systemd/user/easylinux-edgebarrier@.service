@@ -1,0 +1,8 @@
+# Gestartet vom KWin-Skript easylinux-edgebarrier: %i = Barriere in Pixeln (0 = Maus läuft frei)
+[Unit]
+Description=Mausbarriere zwischen Bildschirmen auf %i px setzen (easyLinux)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/kwriteconfig6 --file kwinrc --group EdgeBarrier --key EdgeBarrier %i
+ExecStart=/usr/bin/qdbus6 org.kde.KWin /KWin reconfigure
